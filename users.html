@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Users | Pastia's Party Rental</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon"><i data-lucide="party-popper"></i></div>
+        <div>
+          <p class="brand-name">Pastia's Party Rental</p>
+          <p class="brand-subtitle">Management System</p>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <a class="nav-item" href="dashboard.html"><i data-lucide="home"></i> Dashboard</a>
+        <a class="nav-item" href="inventory.html"><i data-lucide="package"></i> Inventory</a>
+        <a class="nav-item" href="rentals.html"><i data-lucide="file-text"></i> Rental Transactions</a>
+        <a class="nav-item" href="history.html"><i data-lucide="history"></i> Inventory History</a>
+        <a class="nav-item" href="reports.html"><i data-lucide="bar-chart-3"></i> Rental Reports</a>
+        <a class="nav-item active" href="users.html"><i data-lucide="users"></i> Users</a>
+      </nav>
+    </aside>
+
+    <main class="content">
+      <header class="page-header">
+        <h1>Users</h1>
+        <div class="page-right">
+          <span class="welcome-text"><span id="welcomeUser">Welcome, User</span></span>
+          <button id="logoutButton" class="logout-btn">Logout</button>
+
+          <script type="module">
+            import { logoutUser } from "js/auth.js";
+            document.getElementById("logoutButton").addEventListener("click", logoutUser);
+          </script>
+        </div>
+      </header>
+
+      <button class="primary-button" id="addUserBtn"><i data-lucide="user-plus"></i> Add User</button>
+
+      <section class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>User ID</th>
+              <th>Role</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody"></tbody>
+        </table>
+        <p class="empty-hint" id="usersEmptyHint">No users found.</p>
+      </section>
+    </main>
+  </div>
+
+  <!-- Add User Modal -->
+  <div class="modal hidden" id="addUserModal" aria-hidden="true">
+    <div class="modal-overlay" id="addUserOverlay"></div>
+    <div class="modal-card">
+      <h2>Add New User</h2>
+      <form id="addUserForm">
+        <div class="form-group">
+          <label for="newUserFullname">Full Name</label>
+          <input type="text" id="newUserFullname" required>
+        </div>
+        <div class="form-group">
+          <label for="newUserEmail">Email</label>
+          <input type="email" id="newUserEmail" required>
+        </div>
+        <div class="form-group">
+          <label for="newUserPassword">Password</label>
+          <input type="password" id="newUserPassword" required minlength="6">
+          <small style="color: #6b7280; font-size: 12px;">Minimum 6 characters</small>
+        </div>
+        <div class="form-group">
+          <label for="newUserRole">Role</label>
+          <select id="newUserRole" required>
+            <option value="staff">Staff</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-cancel" id="cancelAddUserBtn">Cancel</button>
+          <button type="submit" class="primary-button" id="saveNewUserBtn">Create User</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit User Modal -->
+  <div class="modal hidden" id="editUserModal" aria-hidden="true">
+    <div class="modal-overlay" id="editUserOverlay"></div>
+    <div class="modal-card">
+      <h2 id="modalTitle">Edit User</h2>
+      <form id="editUserForm">
+        <div class="form-group">
+          <label for="userFullname">Full Name</label>
+          <input type="text" id="userFullname" required>
+        </div>
+        <div class="form-group">
+          <label for="userEmail">User ID</label>
+          <input type="text" id="userEmail" disabled>
+        </div>
+        <div class="form-group">
+          <label for="userRole">Role</label>
+          <select id="userRole" required>
+            <option value="admin">Admin</option>
+            <option value="staff">Staff</option>
+          </select>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-cancel" id="cancelUserBtn">Cancel</button>
+          <button type="submit" class="primary-button" id="saveUserBtn">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+    import { isLoggedIn } from "js/auth.js";
+
+    const logged = await isLoggedIn();
+    if (!logged) {
+      window.location.href = "index.html";
+    }
+  </script>
+
+  <script type="module" src="js/supabase.js"></script>
+  <script type="module" src="js/auth.js"></script>
+  <script type="module" src="js/navigation.js"></script>
+  <script type="module" src="js/users.js"></script>
+
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+  </script>
+
+</body>
+
+</html>

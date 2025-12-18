@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rental Transactions | Pastia's Party Rental</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="css/return_modal.css">
+  <link rel="stylesheet" href="css/calendar.css">
+  <!-- FullCalendar CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
+  <!-- FullCalendar JS -->
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon"><i data-lucide="party-popper"></i></div>
+        <div>
+          <p class="brand-name">Pastia's Party Rental</p>
+          <p class="brand-subtitle">Management System</p>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <a class="nav-item" href="dashboard.html"><i data-lucide="home"></i> Dashboard</a>
+        <a class="nav-item" href="inventory.html"><i data-lucide="package"></i> Inventory</a>
+        <a class="nav-item active" href="rentals.html"><i data-lucide="file-text"></i> Rental Transactions</a>
+        <a class="nav-item" href="history.html"><i data-lucide="history"></i> Inventory History</a>
+        <a class="nav-item" href="reports.html"><i data-lucide="bar-chart-3"></i> Rental Reports</a>
+        <a class="nav-item" href="users.html"><i data-lucide="users"></i> Users</a>
+      </nav>
+    </aside>
+
+    <main class="content">
+      <header class="page-header">
+        <h1>Rental Transactions</h1>
+        <div class="page-right">
+          <span class="welcome-text"><span id="welcomeUser">Welcome, User</span></span>
+          <button id="logoutButton" class="logout-btn">Logout</button>
+
+          <script type="module">
+            import { logoutUser } from "js/auth.js";
+            document.getElementById("logoutButton").addEventListener("click", logoutUser);
+          </script>
+        </div>
+      </header>
+
+      <!-- View Tabs -->
+      <div class="view-tabs">
+        <button id="listViewTab" class="tab-btn active" data-view="list">
+          <i data-lucide="list"></i> List View
+        </button>
+        <button id="calendarViewTab" class="tab-btn" data-view="calendar">
+          <i data-lucide="calendar"></i> Calendar View
+        </button>
+      </div>
+
+      <!-- List View Container (existing table) -->
+      <div id="listView" class="view-container active">
+        <div class="action-bar" style="display: flex; gap: 10px; align-items: center; margin-bottom: 20px;">
+          <button id="addRentalBtn" class="primary-button">New Rental</button>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <label class="switch">
+              <input type="checkbox" id="viewHistoryToggle">
+              <span class="slider round"></span>
+            </label>
+            <span id="historyLabel">View Archived History</span>
+          </div>
+        </div>
+
+        <section class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Client</th>
+                <th>Quantity</th>
+                <th>Rental Date</th>
+                <th>Return Date</th>
+                <th>Payment</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="rentalsTableBody"></tbody>
+          </table>
+          <p class="empty-hint" id="rentalsEmptyHint">No rental records yet.</p>
+        </section>
+      </div>
+      <!-- End List View -->
+
+      <!-- Calendar View Container -->
+      <div id="calendarView" class="view-container hidden">
+        <div class="calendar-controls">
+          <div class="calendar-filters">
+            <label>
+              <input type="checkbox" id="filterActive" checked> Active
+            </label>
+            <label>
+              <input type="checkbox" id="filterReserved" checked> Reserved
+            </label>
+            <label>
+              <input type="checkbox" id="filterOverdue" checked> Overdue
+            </label>
+          </div>
+        </div>
+        <div id="calendar"></div>
+      </div>
+      <!-- End Calendar View -->
+    </main>
+
+    <!-- Add Rental Modal -->
+    <div id="addRentalModal" class="modal hidden" aria-hidden="true" role="dialog">
+      <div id="addRentalOverlay" class="modal-overlay"></div>
+      <div class="modal-card" style="max-width: 800px; width: 90%;">
+        <div class="modal-header">
+          <h2 id="modalTitle">New Rental</h2>
+          <button id="cancelRentalBtn" class="close-modal-btn"
+            style="background:none; border:none; font-size:24px; cursor:pointer;">&times;</button>
+        </div>
+        <div class="modal-body">
+          <!-- Transaction Type Selector -->
+          <div class="form-group"
+            style="border: 2px solid var(--color-primary-200); border-radius: var(--radius-xl); padding: var(--space-4); background: var(--color-primary-50); margin-bottom: var(--space-5);">
+            <label
+              style="font-weight: 700; font-size: 15px; margin-bottom: var(--space-3); display: block; color: var(--color-primary-800);">Transaction
+              Type *</label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3);">
+              <button type="button" id="transactionTypeRental" class="transaction-type-btn active" data-type="rental"
+                style="padding: var(--space-4); border: 2px solid var(--color-primary-500); border-radius: var(--radius-lg); background: linear-gradient(135deg, var(--color-primary-500) 0%, var(--color-primary-600) 100%); color: white; font-weight: 700; cursor: pointer; transition: all var(--transition-base);">
+                <i data-lucide="calendar" style="width: 20px; height: 20px; margin-bottom: 4px;"></i>
+                <div>Rental</div>
+                <small style="font-size: 11px; opacity: 0.9;">Items to be returned</small>
+              </button>
+              <button type="button" id="transactionTypeSale" class="transaction-type-btn" data-type="sale"
+                style="padding: var(--space-4); border: 2px solid var(--color-gray-300); border-radius: var(--radius-lg); background: white; color: var(--color-gray-700); font-weight: 700; cursor: pointer; transition: all var(--transition-base);">
+                <i data-lucide="shopping-bag" style="width: 20px; height: 20px; margin-bottom: 4px;"></i>
+                <div>Sale</div>
+                <small style="font-size: 11px; opacity: 0.7;">One-time purchase</small>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="rentalClientName">Client Name *</label>
+            <input type="text" id="rentalClientName" placeholder="e.g. John Doe">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="rentalClientPhone">Phone Number</label>
+              <input type="tel" id="rentalClientPhone" placeholder="e.g. 0912-345-6789">
+            </div>
+            <div class="form-group">
+              <label for="rentalClientAddress">Address</label>
+              <input type="text" id="rentalClientAddress" placeholder="e.g. 123 Main St, City">
+            </div>
+          </div>
+
+          <div class="form-row" style="grid-template-columns: 2fr 1fr;">
+            <div class="form-group">
+              <label for="rentalItem">Item *</label>
+              <select id="rentalItem">
+                <option value="">Loading items...</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="rentalQty">Quantity *</label>
+              <input type="number" id="rentalQty" value="1" min="1">
+            </div>
+          </div>
+
+          <!-- Add to Cart Button (only visible for new rentals) -->
+          <div id="addToCartSection" style="margin-bottom: 1rem;">
+            <button type="button" id="addToCartBtn" class="secondary-button"
+              style="width:100%; background: #2196F3; color: white; border: none; border-radius: 8px; padding: 10px; cursor: pointer; font-weight: 600;">
+              ➕ Add Item to Cart
+            </button>
+          </div>
+
+          <!-- Cart Items Display -->
+          <div id="cartSection"
+            style="display: none; margin-bottom: 1rem; border: 2px solid #2196F3; border-radius: 8px; padding: 1rem; background: #f8f9fa;">
+            <h4 style="margin-top: 0; color: #2196F3;">🛒 Cart Items</h4>
+            <div style="overflow-x: auto;">
+              <table id="cartItemsTable"
+                style="width: 100%; border-collapse: collapse; font-size: 0.85rem; table-layout: fixed;">
+                <colgroup>
+                  <col style="width: 22%;">
+                  <col style="width: 8%;">
+                  <col style="width: 45%;">
+                  <col style="width: 13%;">
+                  <col style="width: 12%;">
+                </colgroup>
+                <thead>
+                  <tr style="background: #e3f2fd;">
+                    <th style="padding: 8px; text-align: left; border-bottom: 2px solid #2196F3; white-space: nowrap;">
+                      ITEM</th>
+                    <th
+                      style="padding: 8px; text-align: center; border-bottom: 2px solid #2196F3; white-space: nowrap;">
+                      QTY</th>
+                    <th style="padding: 8px; text-align: left; border-bottom: 2px solid #2196F3; white-space: nowrap;">
+                      PRICE</th>
+                    <th style="padding: 8px; text-align: right; border-bottom: 2px solid #2196F3; white-space: nowrap;">
+                      SUBTOTAL</th>
+                    <th
+                      style="padding: 8px; text-align: center; border-bottom: 2px solid #2196F3; white-space: nowrap;">
+                      ACTION</th>
+                  </tr>
+                </thead>
+                <tbody id="cartItemsBody">
+                  <!-- Cart items will be inserted here -->
+                </tbody>
+                <tfoot>
+                  <tr style="font-weight: bold; background: #e3f2fd;">
+                    <td colspan="3" style="padding: 8px; text-align: right; border-top: 2px solid #2196F3;">Total:</td>
+                    <td id="cartTotal"
+                      style="padding: 8px; text-align: right; border-top: 2px solid #2196F3; color: #4caf50;">₱0.00</td>
+                    <td style="border-top: 2px solid #2196F3;"></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+            <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #666;">
+              <em>Tip: Add all items you want to rent, then fill in dates and payment details below.</em>
+            </p>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="rentalDate">Rental Date *</label>
+              <input type="date" id="rentalDate">
+            </div>
+            <div class="form-group">
+              <label for="returnDate">Return Date *</label>
+              <input type="date" id="returnDate">
+            </div>
+          </div>
+
+          <p id="availabilityInfo" class="info-text" style="margin-bottom: 1rem; font-size: 0.9rem;">Select item and
+            dates to check availability</p>
+
+          <hr style="margin: 1rem 0; border: 0; border-top: 1px solid #eee;">
+          <h3>Payment Details</h3>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="paymentAmount">Amount (Auto-calculated)</label>
+              <input type="number" id="paymentAmount" value="0" min="0" readonly>
+              <small id="priceCalculation"
+                style="color: #666; font-size: 0.85rem; display: block; margin-top: 4px;">Select item and
+                quantity</small>
+            </div>
+            <div class="form-group">
+              <label for="paymentMethod">Method</label>
+              <select id="paymentMethod">
+                <option value="Cash">Cash</option>
+                <option value="Card">Card</option>
+                <option value="Transfer">Transfer</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="customPriceCheckbox" style="width: auto; margin-right: 8px;">
+              Custom Price
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label for="paymentStatus">Payment Status</label>
+            <select id="paymentStatus">
+              <option value="Pending">Pending</option>
+              <option value="Paid">Paid</option>
+              <option value="Partial">Partial</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="rentalStatus">Rental Status</label>
+            <select id="rentalStatus">
+              <option value="active">Open</option>
+              <option value="reserved">Reserved (Future)</option>
+              <option value="returned">Closed</option>
+              <option value="overdue">Overdue</option>
+            </select>
+          </div>
+
+        </div>
+        <div class="modal-footer" style="margin-top: 20px;">
+          <button id="saveRentalBtn" class="primary-button" style="width:100%">Save Rental</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Missing Items Confirmation Modal -->
+  <div id="missingItemsModal" class="modal hidden" aria-hidden="true" role="dialog">
+    <div id="missingItemsOverlay" class="modal-overlay"></div>
+    <div class="modal-card" style="max-width: 600px;">
+      <div class="modal-header">
+        <h2>Return Confirmation</h2>
+        <button id="cancelMissingItemsBtn" class="close-modal-btn"
+          style="background:none; border:none; font-size:24px; cursor:pointer;">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- Initial Yes/No choice -->
+        <div id="returnChoiceSection">
+          <p style="font-size: 1.1rem; margin-bottom: 2rem; color: #555; text-align: center; line-height: 1.6;">
+            Have all rental items been returned?
+          </p>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <!-- Yes, All Returned Button -->
+            <button id="allReturnedBtn" class="return-choice-btn return-success">
+              <div class="return-icon">✓</div>
+              <div class="return-label">Yes, All Returned</div>
+              <div class="return-sublabel">Mark all items as returned</div>
+            </button>
+
+            <!-- No, Some Missing Button -->
+            <button id="someMissingBtn" class="return-choice-btn return-warning">
+              <div class="return-icon">✗</div>
+              <div class="return-label">No, Some Missing</div>
+              <div class="return-sublabel">Specify missing items</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Missing items form (hidden initially) -->
+        <div id="missingItemsForm" style="display: none;">
+          <h3 style="color: #FF9800; margin-top: 0;">Specify Missing Items</h3>
+          <p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">
+            For each item below, enter the quantity that is missing. Items with 0 missing will be marked as returned.
+          </p>
+          <div id="missingItemsList" style="max-height: 400px; overflow-y: auto;">
+            <!-- Missing items inputs will be generated here -->
+          </div>
+          <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 2px solid #eee;">
+            <label for="missingNotes" style="display: block; margin-bottom: 8px; font-weight: 600;">Additional Notes
+              (Optional)</label>
+            <textarea id="missingNotes" rows="3"
+              placeholder="Any additional comments about the return or missing items..."
+              style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-family: inherit;"></textarea>
+          </div>
+          <div style="display: flex; gap: 12px; margin-top: 1rem;">
+            <button id="confirmMissingBtn" class="primary-button" style="flex: 1; padding: 12px 24px;">
+              Confirm Return
+            </button>
+            <button id="cancelMissingFormBtn" class="secondary-button"
+              style="flex: 1; padding: 12px 24px; background: #6c757d;">
+              Go Back
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { isLoggedIn } from "js/auth.js";
+
+    const logged = await isLoggedIn();
+    if (!logged) {
+      window.location.href = "index.html";
+    }
+  </script>
+
+  <!-- Supabase + Auth + Navigation (common for all pages) -->
+  <script type="module" src="js/supabase.js"></script>
+  <script type="module" src="js/auth.js"></script>
+  <script type="module" src="js/navigation.js"></script>
+  <script type="module" src="js/rentals.js"></script>
+
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+  </script>
+
+</body>
+
+</html>

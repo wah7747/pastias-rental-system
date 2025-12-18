@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Archive | Pastia's Party Rental</title>
+    <link rel="stylesheet" href="../styles.css" />
+</head>
+<body data-page="archive">
+<div class="app-shell">
+    <aside class="sidebar">
+        <!-- ...copy sidebar from inventory.html... -->
+        <a class="nav-item" href="dashboard.html">📊 Dashboard</a>
+        <a class="nav-item" href="inventory.html">📦 Inventory</a>
+        <a class="nav-item" href="archive.html">🗄️ Archive</a>
+        <!-- ...other nav items... -->
+    </aside>
+    <main class="content">
+        <header class="page-header">
+            <h1>Archived Items</h1>
+        </header>
+        <section class="table-container">
+            <table>
+                <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Category</th>
+                    <th>Total Qty</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody id="archiveTableBody"></tbody>
+            </table>
+            <p class="empty-hint" id="archiveEmptyHint">No archived items.</p>
+        </section>
+    </main>
+</div>
+<script type="module" src="../js/archive.js"></script>
+</body>
+</html>

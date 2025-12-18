@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory History | Pastia's Party Rental</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-icon"><i data-lucide="party-popper"></i></div>
+                <div>
+                    <p class="brand-name">Pastia's Party Rental</p>
+                    <p class="brand-subtitle">Management System</p>
+                </div>
+            </div>
+
+            <nav class="nav">
+                <a class="nav-item" href="dashboard.html"><i data-lucide="home"></i> Dashboard</a>
+                <a class="nav-item" href="inventory.html"><i data-lucide="package"></i> Inventory</a>
+                <a class="nav-item" href="rentals.html"><i data-lucide="file-text"></i> Rental Transactions</a>
+                <a class="nav-item active" href="history.html"><i data-lucide="history"></i> Inventory History</a>
+                <a class="nav-item" href="reports.html"><i data-lucide="bar-chart-3"></i> Rental Reports</a>
+                <a class="nav-item" href="users.html"><i data-lucide="users"></i> Users</a>
+            </nav>
+        </aside>
+
+        <main class="content">
+            <header class="page-header">
+                <h1>Inventory History</h1>
+                <div class="page-right">
+                    <span class="welcome-text"><span id="welcomeUser">Welcome, User</span></span>
+                    <button id="logoutButton" class="logout-btn">Logout</button>
+
+                    <script type="module">
+                        import { logoutUser } from "js/auth.js";
+                        document.getElementById("logoutButton").addEventListener("click", logoutUser);
+                    </script>
+                </div>
+            </header>
+
+
+            <!-- Filters -->
+            <div class="controls-row">
+                <div class="control-left">
+                    <select id="filterAction" class="filter-select">
+                        <option value="all">All Actions</option>
+                        <option value="added">Added</option>
+                        <option value="updated">Updated</option>
+                        <option value="deleted">Deleted</option>
+                    </select>
+                    <select id="filterUser" class="filter-select">
+                        <option value="all">All Users</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- History Table -->
+            <section class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>User</th>
+                            <th>Action</th>
+                            <th>Item</th>
+                            <th>Details</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody"></tbody>
+                </table>
+                <p class="empty-hint" id="historyEmptyHint">No history records yet.</p>
+            </section>
+        </main>
+    </div>
+
+    <script type="module">
+        import { isLoggedIn } from "js/auth.js";
+
+        const logged = await isLoggedIn();
+        if (!logged) {
+            window.location.href = "index.html";
+        }
+    </script>
+
+    <script type="module" src="js/supabase.js"></script>
+    <script type="module" src="js/auth.js"></script>
+    <script type="module" src="js/navigation.js"></script>
+    <script type="module" src="js/history.js?v=2"></script>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+    </script>
+
+</body>
+
+</html>

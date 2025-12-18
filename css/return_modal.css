@@ -1,0 +1,91 @@
+/* Return Confirmation Modal Buttons */
+.return-choice-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 20px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.return-choice-btn::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.return-choice-btn:hover::before {
+    opacity: 1;
+}
+
+.return-choice-btn:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.return-choice-btn:active {
+    transform: translateY(-2px);
+}
+
+.return-success {
+    background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+    color: white;
+}
+
+.return-warning {
+    background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+    color: white;
+}
+
+.return-icon {
+    font-size: 2.5rem;
+    margin-bottom: 12px;
+    font-weight: bold;
+    position: relative;
+    z-index: 1;
+}
+
+.return-label {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+    position: relative;
+    z-index: 1;
+}
+
+.return-sublabel {
+    font-size: 0.85rem;
+    opacity: 0.9;
+    font-weight: 500;
+    position: relative;
+    z-index: 1;
+}
+
+@media (max-width: 600px) {
+    .return-choice-btn {
+        padding: 20px 16px;
+    }
+
+    .return-icon {
+        font-size: 2rem;
+    }
+
+    .return-label {
+        font-size: 1rem;
+    }
+
+    .return-sublabel {
+        font-size: 0.75rem;
+    }
+}

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard | Pastia's Party Rental</title>
+  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon"><i data-lucide="party-popper"></i></div>
+        <div>
+          <p class="brand-name">Pastia's Party Rental</p>
+          <p class="brand-subtitle">Management System</p>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <a class="nav-item active" href="dashboard.html"><i data-lucide="home"></i> Dashboard</a>
+        <a class="nav-item" href="inventory.html"><i data-lucide="package"></i> Inventory</a>
+        <a class="nav-item" href="rentals.html"><i data-lucide="file-text"></i> Rental Transactions</a>
+        <a class="nav-item" href="history.html"><i data-lucide="history"></i> Inventory History</a>
+        <a class="nav-item" href="reports.html"><i data-lucide="bar-chart-3"></i> Rental Reports</a>
+        <a class="nav-item" href="users.html"><i data-lucide="users"></i> Users</a>
+      </nav>
+    </aside>
+
+    <main class="content">
+      <header class="page-header">
+        <h1>Dashboard</h1>
+        <div class="page-right">
+          <span class="welcome-text"><span id="welcomeUser">Welcome, User</span></span>
+          <button id="logoutButton" class="logout-btn">Logout</button>
+
+          <script type="module">
+            import { logoutUser } from "../js/auth.js";
+            document.getElementById("logoutButton").addEventListener("click", logoutUser);
+          </script>
+        </div>
+      </header>
+
+      <!-- Dashboard Alerts Section -->
+      <section id="dashboardAlerts" class="alerts-section">
+
+        <!-- Low Stock Alert -->
+        <div class="alert-card low-stock-alert">
+          <div class="alert-icon">⚠️</div>
+          <div class="alert-content">
+            <h3>Low Stock</h3>
+            <p class="alert-count" id="lowStockCount">Loading...</p>
+            <a href="inventory.html" class="alert-link">View Items →</a>
+          </div>
+        </div>
+
+        <!-- Overdue Rentals Alert -->
+        <div class="alert-card overdue-alert">
+          <div class="alert-icon">🚨</div>
+          <div class="alert-content">
+            <h3>Overdue Rentals</h3>
+            <p class="alert-count" id="overdueCount">Loading...</p>
+            <a href="rentals.html" class="alert-link">View All →</a>
+          </div>
+        </div>
+
+        <!-- Pending Payments Alert -->
+        <div class="alert-card payment-alert">
+          <div class="alert-icon">💰</div>
+          <div class="alert-content">
+            <h3>Pending Payments</h3>
+            <p class="alert-count" id="pendingPaymentsAmount">Loading...</p>
+            <a href="rentals.html" class="alert-link">View All →</a>
+          </div>
+        </div>
+
+        <!-- Due Soon Alert -->
+        <div class="alert-card due-soon-alert">
+          <div class="alert-icon">📅</div>
+          <div class="alert-content">
+            <h3>Due Soon (3 days)</h3>
+            <p class="alert-count" id="dueSoonCount">Loading...</p>
+            <a href="rentals.html" class="alert-link">View All →</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="kpi-row">
+        <div class="kpi-card">
+          <p class="kpi-label">Total Rentals To Date</p>
+          <h2 id="kpi-total-rentals">--</h2>
+          <span class="kpi-icon"><i data-lucide="clipboard-list"></i></span>
+        </div>
+        <div class="kpi-card">
+          <p class="kpi-label">Available Items</p>
+          <h2 id="kpi-available-items">--</h2>
+          <span class="kpi-icon"><i data-lucide="package"></i></span>
+        </div>
+        <div class="kpi-card">
+          <p class="kpi-label">Pending Returns</p>
+          <h2 id="kpi-pending-returns">--</h2>
+          <span class="kpi-icon"><i data-lucide="package-check"></i></span>
+        </div>
+        <div class="kpi-card">
+          <p class="kpi-label">Active Rentals</p>
+          <h2 id="kpi-active-rentals">--</h2>
+          <span class="kpi-icon"><i data-lucide="refresh-cw"></i></span>
+        </div>
+      </section>
+
+      <!-- Quick Actions Bar -->
+      <section class="quick-actions-bar">
+        <h3>Quick Actions</h3>
+        <div class="quick-actions-buttons">
+          <button class="quick-button" id="quickAddItem"><i data-lucide="package-plus"></i> Add Item</button>
+          <button class="quick-button" id="quickAddRental"><i data-lucide="file-plus"></i> Add Rental</button>
+          <button class="quick-button" onclick="window.location.href='reports.html'"><i data-lucide="bar-chart-3"></i>
+            View Reports</button>
+        </div>
+      </section>
+
+      <!-- Charts Grid -->
+      <section class="dashboard-grid">
+        <div class="dashboard-graph-panel">
+          <h2>Weekly Rentals Overview</h2>
+          <div class="chart-container">
+            <canvas id="rentalChart"></canvas>
+          </div>
+        </div>
+
+        <div class="dashboard-graph-panel">
+          <h2>Monthly Rentals Overview</h2>
+          <div class="chart-container">
+            <canvas id="monthlyChart"></canvas>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    import { isLoggedIn } from "../js/auth.js";
+
+    const logged = await isLoggedIn();
+    if (!logged) {
+      window.location.href = "../html/index.html";
+    }
+  </script>
+
+  <script type="module" src="../js/supabase.js"></script>
+  <script type="module" src="../js/auth.js"></script>
+  <script type="module" src="../js/navigation.js"></script>
+  <script type="module" src="../js/dashboard.js"></script>
+  <script type="module" src="../js/quick-actions.js"></script>
+
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+  </script>
+
+</body>
+
+</html>

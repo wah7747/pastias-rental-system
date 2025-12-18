@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reports | Pastia's Party Rental</title>
+  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="../css/reports.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon"><i data-lucide="party-popper"></i></div>
+        <div>
+          <p class="brand-name">Pastia's Party Rental</p>
+          <p class="brand-subtitle">Management System</p>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <a class="nav-item" href="dashboard.html"><i data-lucide="home"></i> Dashboard</a>
+        <a class="nav-item" href="inventory.html"><i data-lucide="package"></i> Inventory</a>
+        <a class="nav-item" href="rentals.html"><i data-lucide="file-text"></i> Rental Transactions</a>
+        <a class="nav-item" href="history.html"><i data-lucide="history"></i> Inventory History</a>
+        <a class="nav-item active" href="reports.html"><i data-lucide="bar-chart-3"></i> Rental Reports</a>
+        <a class="nav-item" href="users.html"><i data-lucide="users"></i> Users</a>
+      </nav>
+    </aside>
+
+    <main class="content">
+      <header class="page-header">
+        <h1>Reports & Analytics</h1>
+        <div class="page-right">
+          <span class="welcome-text"><span id="welcomeUser">Welcome, User</span></span>
+          <button id="logoutButton" class="logout-btn">Logout</button>
+          <script type="module">
+            import { logoutUser } from "../js/auth.js";
+            document.getElementById("logoutButton").addEventListener("click", logoutUser);
+          </script>
+        </div>
+      </header>
+
+      <!-- Summary Cards with Horizontal Layout -->
+      <section class="kpi-row">
+        <div class="kpi-card">
+          <span class="kpi-icon"><i data-lucide="dollar-sign"></i></span>
+          <div class="kpi-content">
+            <p class="kpi-label">Total Revenue</p>
+            <h2 id="reportRevenue">$0.00</h2>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-icon"><i data-lucide="package"></i></span>
+          <div class="kpi-content">
+            <p class="kpi-label">Total Items</p>
+            <h2 id="reportTotalItems">0</h2>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-icon"><i data-lucide="refresh-cw"></i></span>
+          <div class="kpi-content">
+            <p class="kpi-label">Active Rentals</p>
+            <h2 id="reportActiveRentals">0</h2>
+          </div>
+        </div>
+      </section>
+
+      <!-- Charts -->
+      <section class="reports-grid">
+        <div class="report-panel">
+          <h3>Inventory Status</h3>
+          <canvas id="inventoryChart"></canvas>
+        </div>
+        <div class="report-panel">
+          <h3>Revenue by Payment Method</h3>
+          <canvas id="revenueChart"></canvas>
+        </div>
+      </section>
+
+      <h3 style="margin-top: 30px;">Reports</h3>
+      <button id="addReportBtn" class="primary-button admin-only" style="margin-bottom: 10px;">New Report</button>
+
+      <!-- Returned -->
+      <section class="table-container">
+        <h2 class="section-title">Returned Items</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Quantity</th>
+              <th>Notes</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="returnedTableBody"></tbody>
+        </table>
+        <p class="empty-hint" id="returnedEmptyHint">No returned items recorded.</p>
+      </section>
+
+      <!-- Missing -->
+      <section class="table-container">
+        <h2 class="section-title">Missing Items</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Quantity</th>
+              <th>Notes</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="missingTableBody"></tbody>
+        </table>
+        <p class="empty-hint" id="missingEmptyHint">No missing items recorded.</p>
+      </section>
+    </main>
+
+    <!-- Report Modal -->
+    <div id="addReportModal" class="modal hidden" aria-hidden="true" role="dialog">
+      <div id="addReportOverlay" class="modal-overlay"></div>
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2 id="modalTitle">New Report</h2>
+          <button id="cancelReportBtn" class="close-modal-btn"
+            style="background:none; border:none; font-size:24px; cursor:pointer;">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="reportRentalId">Rental ID (Optional)</label>
+            <input type="number" id="reportRentalId" placeholder="e.g. 123">
+          </div>
+
+          <div class="form-group">
+            <label for="reportItemName">Item Name *</label>
+            <input type="text" id="reportItemName" placeholder="e.g. Red Chair">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="reportQuantity">Quantity *</label>
+              <input type="number" id="reportQuantity" value="1" min="1">
+            </div>
+            <div class="form-group">
+              <label for="reportType">Type *</label>
+              <select id="reportType">
+                <option value="returned">Returned</option>
+                <option value="missing">Missing</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="reportNotes">Notes</label>
+            <textarea id="reportNotes" rows="3" placeholder="Describe the condition..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer" style="margin-top: 20px;">
+          <button id="saveReportBtn" class="primary-button" style="width:100%">Save Report</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { isLoggedIn } from "../js/auth.js";
+
+    const logged = await isLoggedIn();
+    if (!logged) {
+      window.location.href = "../html/index.html";
+    }
+  </script>
+
+  <script type="module" src="../js/supabase.js"></script>
+  <script type="module" src="../js/auth.js"></script>
+  <script type="module" src="../js/navigation.js"></script>
+  <script type="module" src="../js/reports.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+  </script>
+
+</body>
+
+</html>

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory | Pastia's Party Rental</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="css/inventory.css" />
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body data-page="inventory">
+    <div class="app-shell">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-icon"><i data-lucide="party-popper"></i></div>
+                <div>
+                    <p class="brand-name">Pastia's Party Rental</p>
+                    <p class="brand-subtitle">Management System</p>
+                </div>
+            </div>
+
+            <nav class="nav">
+                <a class="nav-item" href="dashboard.html"><i data-lucide="home"></i> Dashboard</a>
+                <a class="nav-item active" href="inventory.html"><i data-lucide="package"></i> Inventory</a>
+                <a class="nav-item" href="rentals.html"><i data-lucide="file-text"></i> Rental Transactions</a>
+                <a class="nav-item" href="history.html"><i data-lucide="history"></i> Inventory History</a>
+                <a class="nav-item" href="reports.html"><i data-lucide="bar-chart-3"></i> Rental Reports</a>
+                <a class="nav-item" href="users.html"><i data-lucide="users"></i> Users</a>
+            </nav>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="content">
+            <header class="page-header">
+                <h1>Inventory</h1>
+
+                <div class="page-right">
+                    <span id="welcomeUser">Welcome, User</span>
+                    <button id="logoutButton" class="logout-btn">Logout</button>
+                </div>
+            </header>
+
+            <!-- Tabs for Inventory Items and Decorations -->
+            <div class="inventory-tabs">
+                <button class="tab-btn active" data-tab="items">Rental Items</button>
+                <button class="tab-btn" data-tab="decorations">Decorations</button>
+            </div>
+
+            <!-- INVENTORY ITEMS TAB -->
+            <div id="itemsTab" class="tab-content active">
+                <!-- Controls: Search / Filters / Add -->
+                <div class="controls-row">
+                    <div class="control-left">
+                        <div class="search-wrapper">
+                            <i data-lucide="search" class="search-icon"></i>
+                            <input id="searchInventory" class="input-search" placeholder="Search by name or notes" />
+                        </div>
+                        <select id="filterCategory" class="filter-select">
+                            <option value="all">All Categories</option>
+                        </select>
+                    </div>
+                    <div class="control-right">
+                        <button class="primary-button admin-only" id="addItemBtn">
+                            <i data-lucide="plus"></i>
+                            Add Item
+                        </button>
+                    </div>
+                </div>
+
+                <!-- TABLE -->
+                <section class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Category</th>
+                                <th>Total Qty</th>
+                                <th>Available</th>
+                                <th>Rental Price</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="inventoryTableBody"></tbody>
+                    </table>
+
+                    <p class="empty-hint" id="inventoryEmptyHint">No items to display.</p>
+                </section>
+            </div>
+
+            <!-- DECORATIONS TAB -->
+            <div id="decorationsTab" class="tab-content">
+                <!-- Controls: Search / Filters / Add -->
+                <div class="controls-row">
+                    <div class="control-left">
+                        <div class="search-wrapper">
+                            <i data-lucide="search" class="search-icon"></i>
+                            <input id="searchDecorations" class="input-search" placeholder="Search by name or notes" />
+                        </div>
+                        <select id="filterDecorationType" class="filter-select">
+                            <option value="all">All Types</option>
+                        </select>
+                    </div>
+                    <div class="control-right">
+                        <button class="primary-button admin-only" id="addDecorationBtn">
+                            <i data-lucide="plus"></i>
+                            Add Decoration
+                        </button>
+                    </div>
+                </div>
+
+                <!-- DECORATIONS TABLE -->
+                <section class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Decoration</th>
+                                <th>Type</th>
+                                <th>Total Qty</th>
+                                <th>Available</th>
+                                <th>Price</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="decorationsTableBody"></tbody>
+                    </table>
+
+                    <p class="empty-hint" id="decorationsEmptyHint">No decorations to display.</p>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- ITEM MODAL -->
+    <div id="addItemModal" class="modal hidden" aria-hidden="true">
+        <div class="modal-overlay" id="addItemOverlay"></div>
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="addItemTitle">
+            <h2 id="addItemTitle">Add Inventory Item</h2>
+
+            <div class="form-group">
+                <label for="itemName">Name</label>
+                <input type="text" id="itemName" name="name" />
+            </div>
+
+            <div class="form-group">
+                <label for="itemCategory">Category</label>
+                <div style="display: flex; gap: 8px;">
+                    <select id="itemCategory" name="category" style="flex: 1;">
+                        <option value="">-- Select Category --</option>
+                    </select>
+                    <button type="button" id="addCategoryBtn"
+                        style="padding: 10px 12px; border: 1px solid #ccc; border-radius: 8px; background: #f3f4f6; cursor: pointer; font-size: 14px;">+
+                        New</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="itemTotal">Total Quantity</label>
+                <input type="number" id="itemTotal" name="total" min="0" />
+            </div>
+
+            <div class="form-group">
+                <label for="itemRentalPrice">Rental Price (per piece)</label>
+                <input type="number" id="itemRentalPrice" name="rental_price" min="0" step="0.01"
+                    placeholder="e.g., 50.00" />
+            </div>
+
+            <div class="modal-buttons">
+                <button id="saveItemBtn" class="btn-primary">Save</button>
+                <button id="cancelModalBtn" class="btn-cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DECORATION MODAL -->
+    <div id="addDecorationModal" class="modal hidden" aria-hidden="true">
+        <div class="modal-overlay" id="addDecorationOverlay"></div>
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="addDecorationTitle">
+            <h2 id="addDecorationTitle">Add Decoration</h2>
+
+            <div class="form-group">
+                <label for="decorationName">Name</label>
+                <input type="text" id="decorationName" name="name" />
+            </div>
+
+            <div class="form-group">
+                <label for="decorationType">Type</label>
+                <div style="display: flex; gap: 8px;">
+                    <select id="decorationType" name="type" style="flex: 1;">
+                        <option value="">-- Select Type --</option>
+                    </select>
+                    <button type="button" id="addDecorationTypeBtn"
+                        style="padding: 10px 12px; border: 1px solid #ccc; border-radius: 8px; background: #f3f4f6; cursor: pointer; font-size: 14px;">+
+                        New</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="decorationTotal">Total Quantity</label>
+                <input type="number" id="decorationTotal" name="total" min="0" />
+            </div>
+
+            <div class="form-group">
+                <label for="decorationRentalPrice">Price (per piece)</label>
+                <input type="number" id="decorationRentalPrice" name="rental_price" min="0" step="0.01"
+                    placeholder="e.g., 25.00" />
+            </div>
+
+            <div class="modal-buttons">
+                <button id="saveDecorationBtn" class="btn-primary">Save</button>
+                <button id="cancelDecorationModalBtn" class="btn-cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script type="module" src="js/supabase.js"></script>
+    <script type="module" src="js/auth.js"></script>
+    <script type="module" src="js/navigation.js"></script>
+    <script type="module" src="js/inventory.js"></script>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard | Pastia's Party Rental</title>
+  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">🎉</div>
+        <div>
+          <p class="brand-name">Pastia's Party Rental</p>
+          <p class="brand-subtitle">Management System</p>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <a class="nav-item" href="dashboard.html">🏠 Dashboard</a>
+        <a class="nav-item" href="inventory.html">📦 Inventory</a>
+        <a class="nav-item" href="rentals.html">📝 Rental Transactions</a>
+        <a class="nav-item" href="reservations.html">📅 Reservations</a>
+        <a class="nav-item" href="reports.html">📊 Reports</a>
+        <a class="nav-item" href="users.html">👥 Users</a>
+      </nav>
+    </aside>
+
+    <main class="content">
+      <header class="page-header">
+        <h1>Dashboard</h1>
+        <div class="page-right">
+          <span class="welcome-text"><span id="welcomeUser">Welcome, User</span></span>
+          <button id="logoutButton" class="logout-btn">Logout</button>
+
+          <script type="module">
+            import { logoutUser } from "../js/auth.js";
+
+            document.getElementById("logoutButton").addEventListener("click", logoutUser);
+          </script>
+        </div>
+      </header>
+
+
+      <section class="kpi-row">
+        <div class="kpi-card">
+          <p class="kpi-label">Total Rentals To Date</p>
+          <h2 id="kpi-total-rentals">--</h2>
+          <span class="kpi-icon">📋</span>
+        </div>
+        <div class="kpi-card">
+          <p class="kpi-label">Available Items</p>
+          <h2 id="kpi-available-items">--</h2>
+          <canvas id="rentalChart"></canvas>
+        </div>
+  </div>
+
+  <div class="dashboard-graph-panel">
+    <h2>Monthly Rentals Overview</h2>
+    <div class="chart-container">
+      <canvas id="monthlyChart"></canvas>
+    </div>
+  </div>
+
+
+  <div class="dashboard-action-panel">
+    <h3>Quick Actions</h3>
+    <button class="quick-button" onclick="window.location.href='inventory.html'">Add Item</button>
+    <button class="quick-button" onclick="window.location.href='rentals.html'">Add Rental</button>
+    <button class="quick-button" onclick="window.location.href='reports.html'">Generate Report</button>
+  </div>
+  </section>
+  </main>
+  </div>
+
+  <script type="module">
+    import { isLoggedIn } from "../js/auth.js";
+
+    const logged = await isLoggedIn();
+    if (!logged) {
+      window.location.href = "../html/index.html";
+    }
+  </script>
+
+
+
+  <script type="module" src="../js/supabase.js"></script>
+  <script type="module" src="../js/auth.js"></script>
+  <script type="module" src="../js/navigation.js"></script>
+  <script type="module" src="../js/dashboard.js"></script>
+
+</body>
+
+</html>

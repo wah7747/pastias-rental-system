@@ -1,0 +1,214 @@
+/* Inventory specific styles with modern enhancements */
+
+/* Tab Styles */
+.inventory-tabs {
+    display: flex;
+    gap: var(--space-2);
+    margin-bottom: var(--space-6);
+    border-bottom: 2px solid var(--color-gray-200);
+    padding-bottom: 0;
+}
+
+.tab-btn {
+    padding: var(--space-3) var(--space-6);
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-gray-500);
+    transition: all var(--transition-base);
+    position: relative;
+    bottom: -2px;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.tab-btn:hover {
+    color: var(--color-gray-800);
+    background: var(--color-gray-50);
+}
+
+.tab-btn.active {
+    color: var(--color-primary-600);
+    border-bottom-color: var(--color-primary-600);
+    background: linear-gradient(to bottom, var(--color-primary-50), transparent);
+    font-weight: 700;
+}
+
+/* Tab Content */
+.tab-content {
+    display: none;
+    animation: fadeInUp 0.3s ease-out;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Controls Row - Modern Search & Filters */
+.controls-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-5);
+    gap: var(--space-4);
+    flex-wrap: wrap;
+}
+
+.control-left {
+    display: flex;
+    gap: var(--space-3);
+    flex: 1;
+    flex-wrap: wrap;
+}
+
+.control-right {
+    display: flex;
+    gap: var(--space-3);
+}
+
+/* Search Wrapper with Icon */
+.search-wrapper {
+    position: relative;
+    flex: 1;
+    min-width: 250px;
+}
+
+.search-icon {
+    position: absolute;
+    left: var(--space-4);
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    color: var(--color-gray-400);
+    pointer-events: none;
+    transition: color var(--transition-base);
+}
+
+.search-wrapper:focus-within .search-icon {
+    color: var(--color-primary-500);
+}
+
+/* Modern Search Input */
+.input-search {
+    width: 100%;
+    padding: var(--space-3) var(--space-4) var(--space-3) var(--space-12);
+    border: 2px solid var(--color-gray-200);
+    border-radius: var(--radius-xl);
+    font-size: 14px;
+    font-family: inherit;
+    transition: all var(--transition-base);
+    background: white;
+    box-shadow: var(--shadow-sm);
+}
+
+.input-search:hover {
+    border-color: var(--color-gray-300);
+    box-shadow: var(--shadow-md);
+}
+
+.input-search:focus {
+    outline: none;
+    border-color: var(--color-primary-500);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+.input-search::placeholder {
+    color: var(--color-gray-400);
+    font-weight: 400;
+}
+
+/* Modern Select/Filter Dropdown */
+.filter-select,
+select {
+    padding: var(--space-3) var(--space-10) var(--space-3) var(--space-4);
+    border: 2px solid var(--color-gray-200);
+    border-radius: var(--radius-xl);
+    font-size: 14px;
+    font-family: inherit;
+    font-weight: 500;
+    transition: all var(--transition-base);
+    background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right var(--space-3) center;
+    background-size: 18px;
+    appearance: none;
+    cursor: pointer;
+    min-width: 160px;
+    box-shadow: var(--shadow-sm);
+}
+
+.filter-select:hover,
+select:hover {
+    border-color: var(--color-gray-300);
+    box-shadow: var(--shadow-md);
+}
+
+.filter-select:focus,
+select:focus {
+    outline: none;
+    border-color: var(--color-primary-500);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+/* Primary Button Enhancement (Add Item/Decoration) */
+.primary-button {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    white-space: nowrap;
+}
+
+.primary-button svg {
+    width: 18px;
+    height: 18px;
+    stroke-width: 2.5;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .controls-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .control-left {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .control-right {
+        width: 100%;
+    }
+
+    .search-wrapper {
+        min-width: unset;
+    }
+
+    .filter-select,
+    select {
+        width: 100%;
+    }
+
+    .primary-button {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .tab-btn {
+        padding: var(--space-2) var(--space-4);
+        font-size: 14px;
+    }
+
+    .input-search {
+        font-size: 13px;
+    }
+
+    .filter-select,
+    select {
+        font-size: 13px;
+        min-width: unset;
+    }
+}
