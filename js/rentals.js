@@ -1,6 +1,7 @@
 // js/rentals.js
 import { supabase } from "./supabase.js";
 import { getCurrentUserProfile, isLoggedIn, canDelete } from "./auth.js";
+import { ItemSearch } from "./item-search.js";
 
 // DOM Elements
 const addRentalBtn = document.getElementById("addRentalBtn");
@@ -37,11 +38,13 @@ const transactionTypeRental = document.getElementById("transactionTypeRental");
 const transactionTypeSale = document.getElementById("transactionTypeSale");
 let currentTransactionType = "rental"; // Default to rental
 
+
 let allItems = [];
 let editRentalId = null;
 let showArchived = false;
 let cartItems = []; // Array to store items before creating rentals
 let currentUser = null; // Store current user profile for role checking
+let itemSearch = null; // Searchable dropdown instance
 
 // ---------- HELPER FUNCTIONS ----------
 
@@ -80,6 +83,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   await loadItems();
   await loadRentals();
+
+  // Initialize searchable dropdown
+  itemSearch = new ItemSearch();
 
   // Check if we should auto-open the Add Rental modal (from Quick Actions)
   if (sessionStorage.getItem("openAddRentalModal")) {
@@ -143,6 +149,12 @@ function switchTransactionType(type) {
     // Filter items to show only rental items (integer IDs)
     populateItemDropdown("rental");
 
+    // Update search dropdown to show only rental items
+    if (itemSearch) {
+      const rentalItems = allItems.filter(item => item._itemType === 'rental');
+      itemSearch.setItems(rentalItems);
+    }
+
   } else {
     // Sale mode
     transactionTypeSale?.classList.add("active");
@@ -172,8 +184,15 @@ function switchTransactionType(type) {
     availabilityInfo.textContent = "Select item and quantity";
     saveRentalBtn.textContent = "Save Sale";
 
+
     // Filter items to show only decorations (UUID IDs)
     populateItemDropdown("sale");
+
+    // Update search dropdown to show only sale items
+    if (itemSearch) {
+      const saleItems = allItems.filter(item => item._itemType === 'decoration');
+      itemSearch.setItems(saleItems);
+    }
   }
 }
 
@@ -335,6 +354,11 @@ function openModal(rental = null) {
 function closeModal() {
   modal.classList.add("hidden");
   modal.setAttribute("aria-hidden", "true");
+
+  // Clear search field
+  if (itemSearch) {
+    itemSearch.clear();
+  }
 }
 
 // ---------- CART FUNCTIONS ----------
@@ -537,6 +561,11 @@ async function loadItems() {
 
   // Initially populate with rental items (default mode)
   populateItemDropdown("rental");
+
+  // Update searchable dropdown with all items
+  if (itemSearch) {
+    itemSearch.setItems(allItems);
+  }
 }
 
 // Recalculate cart items when dates change

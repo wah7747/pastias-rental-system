@@ -164,11 +164,24 @@
           </div>
 
           <div class="form-row" style="grid-template-columns: 2fr 1fr;">
-            <div class="form-group">
-              <label for="rentalItem">Item *</label>
-              <select id="rentalItem">
-                <option value="">Loading items...</option>
-              </select>
+            <div class="form-group" style="position: relative;">
+              <label for="rentalItemSearch">Item * <small style="color: #888; font-weight: normal;">(Type to search or
+                  click to see all)</small></label>
+              <div style="position: relative;">
+                <input type="text" id="rentalItemSearch" placeholder="Search for items by name..." autocomplete="off"
+                  style="width: 100%; padding-right: 40px;">
+                <button type="button" id="showAllItemsBtn"
+                  style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #6b7280; padding: 4px 8px;"
+                  title="Show all items">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </button>
+              </div>
+              <div id="itemSearchResults" class="search-dropdown hidden">
+                <!-- Dropdown with search results will appear here -->
+              </div>
+              <input type="hidden" id="rentalItem" value="">
             </div>
             <div class="form-group">
               <label for="rentalQty">Quantity *</label>
