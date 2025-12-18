@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Rental Transactions | Pastia's Party Rental</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="css/rentals.css">
   <link rel="stylesheet" href="css/return_modal.css">
   <link rel="stylesheet" href="css/calendar.css">
   <!-- FullCalendar CSS -->
@@ -363,7 +364,7 @@
   </div>
 
   <script type="module">
-    import { isLoggedIn } from "js/auth.js";
+    import { isLoggedIn } from "./js/auth.js";
 
     const logged = await isLoggedIn();
     if (!logged) {

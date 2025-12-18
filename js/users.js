@@ -1,6 +1,6 @@
 // js/users.js
 import { supabase } from "./supabase.js";
-import { getCurrentUserProfile, isLoggedIn } from "./auth.js";
+import { getCurrentUserProfile, isLoggedIn, canDelete } from "./auth.js";
 
 let currentUser = null;
 let editUserId = null;
@@ -160,6 +160,12 @@ window.editUser = async function (userId) {
 
 // Delete User
 window.deleteUser = async function (userId, fullname) {
+  // Check permission (defense in depth - page already restricted to admins)
+  if (!await canDelete()) {
+    alert("Permission denied. Only Admins can delete users.");
+    return;
+  }
+
   if (!confirm(`Are you sure you want to delete ${fullname}? This action cannot be undone.`)) {
     return;
   }

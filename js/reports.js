@@ -84,26 +84,35 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 async function loadAnalytics() {
-  // 1. Fetch Rentals for Revenue & Active Counts (exclude archived)
+  // 1. Fetch Rentals for Revenue & Active Counts (include all rentals for revenue)
   const { data: rentals, error: rentalError } = await supabase
     .from("rentals")
-    .select("payment_amount, payment_method, status")
-    .or('archived.is.null,archived.eq.false');
+    .select("payment_amount, payment_method, status, archived");
 
   if (!rentalError && rentals) {
-    // Calculate Revenue
-    const totalRevenue = rentals.reduce((sum, r) => sum + (Number(r.payment_amount) || 0), 0);
-    document.getElementById("reportRevenue").textContent = `₱${totalRevenue.toLocaleString()}`;
+    console.log("Rentals for revenue calculation:", rentals);
+    console.log("Number of rentals:", rentals.length);
 
-    // Calculate Active Rentals
-    const activeCount = rentals.filter(r => r.status === 'active').length;
+    // Calculate Revenue - ensure payment_amount is properly parsed as a number
+    const totalRevenue = rentals.reduce((sum, r) => {
+      const amount = parseFloat(r.payment_amount) || 0;
+      console.log(`Rental payment: ${r.payment_amount} -> ${amount}`);
+      return sum + amount;
+    }, 0);
+
+    console.log("Total Revenue:", totalRevenue);
+    document.getElementById("reportRevenue").textContent = `₱${totalRevenue.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+    // Calculate Active Rentals (exclude archived)
+    const activeCount = rentals.filter(r => r.status === 'active' && !r.archived).length;
     document.getElementById("reportActiveRentals").textContent = activeCount;
 
     // Chart: Revenue by Method
     const methodStats = {};
     rentals.forEach(r => {
       const method = r.payment_method || "Unknown";
-      methodStats[method] = (methodStats[method] || 0) + (Number(r.payment_amount) || 0);
+      const amount = parseFloat(r.payment_amount) || 0;
+      methodStats[method] = (methodStats[method] || 0) + amount;
     });
 
     renderPieChart("revenueChart", Object.keys(methodStats), Object.values(methodStats), "Revenue Source");

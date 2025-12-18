@@ -1,6 +1,6 @@
 // js/rentals.js
 import { supabase } from "./supabase.js";
-import { isLoggedIn, getCurrentUserProfile } from "./auth.js";
+import { getCurrentUserProfile, isLoggedIn, canDelete } from "./auth.js";
 
 // DOM Elements
 const addRentalBtn = document.getElementById("addRentalBtn");
@@ -41,6 +41,7 @@ let allItems = [];
 let editRentalId = null;
 let showArchived = false;
 let cartItems = []; // Array to store items before creating rentals
+let currentUser = null; // Store current user profile for role checking
 
 // ---------- HELPER FUNCTIONS ----------
 
@@ -73,7 +74,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const profile = await getCurrentUserProfile();
   if (profile) {
-    document.getElementById("welcomeUser").innerText = `Welcome, ${profile.fullname}`;
+    currentUser = profile; // Store for later use
+    document.getElementById("welcomeUser").innerText = `Welcome, ${profile.fullname} `;
   }
 
   await loadItems();
@@ -187,18 +189,26 @@ function populateItemDropdown(type) {
     filteredItems = allItems.filter(item => item._itemType === 'decoration');
   }
 
-  console.log(`Filtering for ${type}:`, filteredItems.length, "items found");
+  console.log(`Filtering for ${type}: `, filteredItems.length, "items found");
 
   if (filteredItems.length === 0) {
     rentalItem.innerHTML = `<option value="">No ${type === "rental" ? "rental items" : "decorations"} available</option>`;
+    console.log("No items, set innerHTML to:", rentalItem.innerHTML);
     return;
   }
 
-  rentalItem.innerHTML = '<option value="">-- Select Item --</option>' +
+  const optionsHTML = '<option value="">-- Select Item --</option>' +
     filteredItems.map(item => {
       const available = item.realTimeAvailable || item.quantity_available || 0;
       return `<option value="${item.id}">${item.name} (${available} available)</option>`;
     }).join("");
+
+  console.log("Setting dropdown HTML, element:", rentalItem);
+  console.log("Options to set:", optionsHTML.substring(0, 200) + "...");
+
+  rentalItem.innerHTML = optionsHTML;
+
+  console.log("Dropdown innerHTML after setting:", rentalItem.innerHTML.substring(0, 200) + "...");
 }
 
 // Transaction type button click handlers
@@ -230,7 +240,15 @@ function openModal(rental = null) {
   if (rental) {
     // EDIT MODE - editing existing rental WITH CART
     editRentalId = rental.id;
-    document.getElementById("modalTitle").innerText = "Edit Rental";
+
+    // Detect transaction type based on item_id
+    const isDecorationItem = isDecoration(rental.item_id);
+    const detectedType = isDecorationItem ? "sale" : "rental";
+
+    // Switch to appropriate transaction type FIRST
+    switchTransactionType(detectedType);
+
+    // Now populate fields
     rentalClientName.value = rental.renter_name || "";
     if (clientPhone) clientPhone.value = rental.client_phone || "";
     if (clientAddress) clientAddress.value = rental.client_address || "";
@@ -256,13 +274,17 @@ function openModal(rental = null) {
       const days = calculateRentalDays(rental.rent_date, rental.return_date);
       const price = parseFloat(item.rental_price) || 0;
 
+      // For decorations (sales), don't use days in calculation
+      const subtotal = isDecorationItem ? (price * (rental.quantity || 1)) : (price * (rental.quantity || 1) * days);
+
       cartItems = [{
         itemId: String(rental.item_id),
         itemName: item.name,
         quantity: rental.quantity || 1,
         pricePerUnit: price,
-        days: days,
-        subtotal: price * (rental.quantity || 1) * days,
+        days: isDecorationItem ? null : days,
+        subtotal: subtotal,
+        isDecoration: isDecorationItem,
         existingRentalId: rental.id // Track original rental
       }];
     } else {
@@ -277,7 +299,10 @@ function openModal(rental = null) {
   } else {
     // NEW RENTAL MODE - using cart
     editRentalId = null;
-    document.getElementById("modalTitle").innerText = "New Rental";
+
+    // Initialize transaction type to rental (default)
+    switchTransactionType("rental");
+
     // Defaults
     rentalClientName.value = "";
     if (clientPhone) clientPhone.value = "";
@@ -428,7 +453,7 @@ function renderCartItems() {
 
 function calculateCartTotal() {
   const total = cartItems.reduce((sum, item) => sum + item.subtotal, 0);
-  cartTotal.textContent = `₱${total.toFixed(2)}`;
+  cartTotal.textContent = `₱${total.toFixed(2)} `;
   paymentAmount.value = total.toFixed(2);
 }
 
@@ -441,6 +466,8 @@ addToCartBtn?.addEventListener("click", addItemToCart);
 // ---------- LOGIC ----------
 
 async function loadItems() {
+  console.log("=== loadItems called ===");
+
   // Fetch both inventory items and decorations
   const { data: inventoryItems, error: itemsError } = await supabase
     .from("inventory_items")
@@ -454,6 +481,9 @@ async function loadItems() {
     .eq("archived", false)
     .order("name");
 
+  console.log("Inventory items fetched:", inventoryItems?.length || 0);
+  console.log("Decorations fetched:", decorations?.length || 0);
+
   if (itemsError) {
     console.error("Error loading inventory items:", itemsError);
   }
@@ -466,6 +496,8 @@ async function loadItems() {
     ...(inventoryItems || []).map(item => ({ ...item, _itemType: 'rental' })),
     ...(decorations || []).map(item => ({ ...item, _itemType: 'decoration' }))
   ];
+
+  console.log("Total items combined:", allItemsData.length);
 
   if (allItemsData.length === 0) {
     rentalItem.innerHTML = '<option value="">No items available</option>';
@@ -499,6 +531,9 @@ async function loadItems() {
     ...item,
     realTimeAvailable: item.quantity_total - (rentedMap[item.id] || 0)
   }));
+
+  console.log("allItems set with", allItems.length, "items");
+  console.log("Calling populateItemDropdown('rental')");
 
   // Initially populate with rental items (default mode)
   populateItemDropdown("rental");
@@ -590,7 +625,7 @@ viewHistoryToggle?.addEventListener("change", () => {
 
 // Expose archive function globally so it can be called from HTML onclick
 window.archiveRental = async (id) => {
-  if (!confirm("Are you sure you want to archive this rental? It will move to history.")) return;
+  if (!confirm("Are you sure you wish to put this in the archive? This will move it to history.")) return;
 
   const { error } = await supabase
     .from("rentals")
@@ -606,6 +641,12 @@ window.archiveRental = async (id) => {
 
 // Expose delete function globally
 window.deleteRental = async (id) => {
+  // Check permission
+  if (!await canDelete()) {
+    alert("Permission denied. Only Admins can delete rentals.");
+    return;
+  }
+
   if (!confirm("Are you sure you want to DELETE this rental permanently? This cannot be undone.")) return;
 
   try {
@@ -628,6 +669,7 @@ window.deleteRental = async (id) => {
     } else {
       alert("Rental deleted successfully.");
       loadRentals();
+      refreshCalendar(); // Refresh calendar view
     }
   } catch (err) {
     console.error("Unexpected error:", err);
@@ -637,10 +679,16 @@ window.deleteRental = async (id) => {
 
 // Expose archive group function for grouped rentals
 window.archiveRentalGroup = async (idsString) => {
+  // Check permission
+  if (!await canDelete()) {
+    alert("Permission denied. Only Admins can delete rentals.");
+    return;
+  }
+
   const ids = idsString.split(',');
   const count = ids.length;
 
-  if (!confirm(`Are you sure you want to archive ${count} rental(s)? They will move to history.`)) return;
+  if (!confirm(`Are you sure you wish to put ${count === 1 ? 'this rental' : count + ' rentals'} in the archive ? This will move ${count === 1 ? 'it' : 'them'} to history.`)) return;
 
   let successCount = 0;
   for (const id of ids) {
@@ -664,10 +712,16 @@ window.archiveRentalGroup = async (idsString) => {
 
 // Expose delete group function for grouped rentals
 window.deleteRentalGroup = async (idsString) => {
+  // Check permission
+  if (!await canDelete()) {
+    alert("Permission denied. Only Admins can delete rentals.");
+    return;
+  }
+
   const ids = idsString.split(',');
   const count = ids.length;
 
-  if (!confirm(`Are you sure you want to DELETE ${count} rental(s) permanently? This cannot be undone.`)) return;
+  if (!confirm(`Are you sure you want to DELETE ${count} rental(s) permanently ? This cannot be undone.`)) return;
 
   try {
     let successCount = 0;
@@ -680,7 +734,7 @@ window.deleteRentalGroup = async (idsString) => {
       if (!error && delCount > 0) {
         successCount++;
       } else if (error && error.code === '23503') {
-        alert(`Cannot delete rental ${id} because it has linked Reports. Please delete the reports first.`);
+        alert(`Cannot delete rental ${id} because it has linked Reports.Please delete the reports first.`);
       }
     }
 
@@ -701,8 +755,8 @@ window.viewRentalDetails = async (id) => {
   const { data, error } = await supabase
     .from("rentals")
     .select(`
-      id, item_id, renter_name, quantity, rent_date, return_date, 
-      payment_amount, payment_method, payment_status, status, archived, created_at
+id, item_id, renter_name, quantity, rent_date, return_date,
+  payment_amount, payment_method, payment_status, status, archived, created_at
     `)
     .eq("id", id)
     .single();
@@ -712,12 +766,36 @@ window.viewRentalDetails = async (id) => {
     return;
   }
 
+  // Fetch item name from inventory_items or decorations
+  let itemName = "Unknown Item";
+
+  // Try inventory_items first
+  const { data: invItem } = await supabase
+    .from("inventory_items")
+    .select("name")
+    .eq("id", data.item_id)
+    .single();
+
+  if (invItem) {
+    itemName = invItem.name;
+  } else {
+    // Try decorations if not found in inventory_items
+    const { data: decItem } = await supabase
+      .from("decorations")
+      .select("name")
+      .eq("id", data.item_id)
+      .single();
+
+    if (decItem) {
+      itemName = decItem.name;
+    }
+  }
+
   // Create and show detail modal
-  const itemName = data.inventory_items?.name || "Unknown Item";
   const statusColor = getStatusColor(data.status);
 
   const detailHTML = `
-    <div id="rentalDetailModal" class="modal" style="display:flex; align-items:center; justify-content:center;">
+  <div id="rentalDetailModal" class="modal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; z-index: 1000;">
       <div class="modal-overlay" onclick="closeDetailModal()"></div>
       <div class="modal-card" style="max-width: 600px; position: relative; z-index: 1001;">
         <div class="modal-header">
@@ -831,10 +909,10 @@ function calculatePayment() {
   } else {
     if (isDecorationSale) {
       // For sales, don't show days
-      priceCalculation.textContent = `₱${price.toFixed(2)} × ${qty} piece${qty > 1 ? 's' : ''} = ₱${total.toFixed(2)}`;
+      priceCalculation.textContent = `₱${price.toFixed(2)} × ${qty} piece${qty > 1 ? 's' : ''} = ₱${total.toFixed(2)} `;
     } else {
       // For rentals, include days
-      priceCalculation.textContent = `₱${price.toFixed(2)} × ${qty} piece${qty > 1 ? 's' : ''} × ${days} day${days > 1 ? 's' : ''} = ₱${total.toFixed(2)}`;
+      priceCalculation.textContent = `₱${price.toFixed(2)} × ${qty} piece${qty > 1 ? 's' : ''} × ${days} day${days > 1 ? 's' : ''} = ₱${total.toFixed(2)} `;
     }
     priceCalculation.style.color = "#4caf50";
   }
@@ -1048,13 +1126,13 @@ saveRentalBtn?.addEventListener("click", async () => {
 
       try {
         // Check if this is a simple single-item edit (same item, just updating details)
-        const isSingleItemEdit = cartItems.length === 1 && 
-                                 cartItems[0].existingRentalId === editRentalId;
+        const isSingleItemEdit = cartItems.length === 1 &&
+          cartItems[0].existingRentalId === editRentalId;
 
         if (isSingleItemEdit) {
           // SIMPLE UPDATE: Update the existing rental in place (preserves ID and foreign key relationships)
           const cartItem = cartItems[0];
-          
+
           const rentalPayload = {
             renter_name: sharedClientName,
             client_phone: sharedClientPhone,
@@ -1093,7 +1171,7 @@ saveRentalBtn?.addEventListener("click", async () => {
           const available = item.quantity_total - currentlyRented;
 
           if (available < cartItem.quantity) {
-            alert(`Insufficient inventory for ${cartItem.itemName}. Only ${available} available.`);
+            alert(`Insufficient inventory for ${cartItem.itemName}.Only ${available} available.`);
             saveRentalBtn.disabled = false;
             return;
           }
@@ -1113,7 +1191,7 @@ saveRentalBtn?.addEventListener("click", async () => {
         } else {
           // COMPLEX EDIT: User is changing items (adding/removing from cart)
           // This requires delete-and-recreate, but we need to check for linked reports first
-          
+
           // Check if this rental has linked reports
           const { data: linkedReports, error: reportsError } = await supabase
             .from("reports")
@@ -1129,10 +1207,10 @@ saveRentalBtn?.addEventListener("click", async () => {
           if (linkedReports && linkedReports.length > 0) {
             // This rental has linked incident reports, cannot delete it
             alert("Cannot modify items for this rental because it has linked Incident Reports.\n\n" +
-                  "You can either:\n" +
-                  "• Edit the rental details without changing the item (cancel and reopen)\n" +
-                  "• Delete the incident reports first, then edit this rental\n\n" +
-                  "This protects data integrity and prevents orphaned reports.");
+              "You can either:\n" +
+              "• Edit the rental details without changing the item (cancel and reopen)\n" +
+              "• Delete the incident reports first, then edit this rental\n\n" +
+              "This protects data integrity and prevents orphaned reports.");
             saveRentalBtn.disabled = false;
             return;
           }
@@ -1147,7 +1225,7 @@ saveRentalBtn?.addEventListener("click", async () => {
             // Check if it's a foreign key constraint error
             if (deleteError.code === '23503') {
               alert("Cannot modify items: This rental has linked Incident Reports.\n\n" +
-                    "Please delete the reports first or edit without changing items.");
+                "Please delete the reports first or edit without changing items.");
             } else {
               throw deleteError;
             }
@@ -1226,6 +1304,7 @@ saveRentalBtn?.addEventListener("click", async () => {
 
           closeModal();
           loadRentals();
+          refreshCalendar(); // Refresh calendar view
           alert(`Rental updated successfully! ${createdRentals.length} item(s) in transaction.`);
         }
       } catch (err) {
@@ -1328,6 +1407,7 @@ saveRentalBtn?.addEventListener("click", async () => {
 
       closeModal();
       loadRentals();
+      refreshCalendar(); // Refresh calendar view
       alert(`Successfully created ${createdRentals.length} rental(s) for ${sharedClientName}!`);
     }
   } catch (err) {
@@ -1387,7 +1467,7 @@ async function loadRentals() {
   const groupedRentals = {};
 
   data.forEach(r => {
-    const groupKey = `${r.renter_name}|${r.rent_date}|${r.return_date}|${r.status}|${r.payment_status}|${r.payment_method}`;
+    const groupKey = `${r.renter_name}| ${r.rent_date}| ${r.return_date}| ${r.status}| ${r.payment_status}| ${r.payment_method} `;
 
     if (!groupedRentals[groupKey]) {
       groupedRentals[groupKey] = {
@@ -1437,17 +1517,28 @@ async function loadRentals() {
     const isMultiItem = group.items.length > 1;
     const editIds = isMultiItem ? group.rentalIds.join(',') : group.rentalIds[0];
 
-    // Action buttons
+    // Action buttons - check if user is admin
+    const isAdmin = currentUser?.role?.toLowerCase() === 'admin';
+
     const actionButtons = showArchived
-      ? `
-<button onclick="viewRentalDetails('${group.rentalIds[0]}')" class="btn-action" title="View Details" style="padding: 6px 12px; margin: 2px; background: #2196F3; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">??? View</button>
+      ? (isAdmin
+        ? `
+<button onclick="viewRentalDetails('${group.rentalIds[0]}')" class="btn-action" title="View Details" style="padding: 6px 12px; margin: 2px; background: #2196F3; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">👁️ View</button>
 <button onclick="deleteRentalGroup('${group.rentalIds.join(',')}')" class="btn-action admin-only" title="Delete" style="padding: 6px 12px; margin: 2px; background: #f44336; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">🗑️ Delete</button>
 `
-      : `
-<button onclick="editRental('${editIds}')" class="btn-action" title="${isMultiItem ? 'Edit Group' : 'Edit'}" style="padding: 6px 12px; margin: 2px; background: #4CAF50; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">✏️ Edit</button>
-${canArchive ? `<button onclick="archiveRentalGroup('${group.rentalIds.join(',')}')" class="btn-action" title="Archive" style="padding: 6px 12px; margin: 2px; background: #FF9800; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">📂 Archive</button>` : ''}
-<button onclick="deleteRentalGroup('${group.rentalIds.join(',')}')" class="btn-action admin-only" title="Delete" style="padding: 6px 12px; margin: 2px; background: #f44336; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">🗑️ Delete</button>
-`;
+        : `
+<button onclick="viewRentalDetails('${group.rentalIds[0]}')" class="btn-action" title="View Details" style="padding: 6px 12px; margin: 2px; background: #2196F3; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">👁️ View</button>
+<span style="color: #999; font-size: 0.85em; font-style: italic;">No permission</span>
+`)
+      : (isAdmin
+        ? `
+<button onclick="editRental('${editIds}')" class="btn-action btn-action-edit" title="${isMultiItem ? 'Edit Group' : 'Edit'}">✏️ Edit</button>
+<button onclick="archiveRentalGroup('${group.rentalIds.join(',')}')" class="btn-action btn-action-delete" title="Delete">🗑️ Delete</button>
+`
+        : `
+<button onclick="editRental('${editIds}')" class="btn-action btn-action-edit" title="${isMultiItem ? 'Edit Group' : 'Edit'}">✏️ Edit</button>
+<span style="color: #999; font-size: 0.85em; font-style: italic;">No permission</span>
+`);
 
     // Create client display with tooltip on click
     const phone = group.client_phone || 'No phone';
@@ -1529,7 +1620,7 @@ window.closeClientInfoModal = () => {
 
 function getStatusColor(status) {
   switch (status?.toLowerCase()) {
-    case 'active': return '#d4edda';
+    case 'active': return '#7bed9f';
     case 'reserved': return '#fff3cd';
     case 'overdue': return '#f8d7da';
     case 'returned': return '#e2e3e5';
@@ -1928,9 +2019,57 @@ async function populateMissingItemsForm() {
     return;
   }
 
-  // Generate form inputs for each item
-  missingItemsList.innerHTML = rentals.map((rental, index) => {
-    const itemName = rental.inventory_items?.name || "Unknown Item";
+  console.log("Rentals loaded for return:", rentals);
+
+  // Fetch item names from both inventory_items and decorations
+  const itemIds = [...new Set(rentals.map(r => r.item_id))];
+
+  console.log("Item IDs to fetch:", itemIds);
+
+  const { data: inventoryItems, error: invError } = await supabase
+    .from("inventory_items")
+    .select("id, name")
+    .in("id", itemIds);
+
+  const { data: decorations, error: decError } = await supabase
+    .from("decorations")
+    .select("id, name")
+    .in("id", itemIds);
+
+  console.log("Inventory items fetched:", inventoryItems);
+  console.log("Decorations fetched:", decorations);
+  console.log("Inventory error:", invError);
+  console.log("Decorations error:", decError);
+
+  // Create item name map and track which items are decorations
+  const itemNameMap = {};
+  const decorationIds = new Set();
+
+  (inventoryItems || []).forEach(item => {
+    itemNameMap[item.id] = item.name;
+  });
+
+  (decorations || []).forEach(item => {
+    itemNameMap[item.id] = item.name;
+    decorationIds.add(item.id); // Mark as decoration
+  });
+
+  console.log("Item name map:", itemNameMap);
+  console.log("Decoration IDs:", Array.from(decorationIds));
+
+  // Filter out decorations - only show rental items in the return form
+  const rentalItemsOnly = rentals.filter(r => !decorationIds.has(r.item_id));
+
+  // If all items are decorations, skip the modal entirely
+  if (rentalItemsOnly.length === 0) {
+    console.log("All items are decorations - auto-completing return");
+    await handleAllReturned(); // Automatically mark as returned
+    return;
+  }
+
+  // Generate form inputs for rental items only (exclude decorations)
+  missingItemsList.innerHTML = rentalItemsOnly.map((rental, index) => {
+    const itemName = itemNameMap[rental.item_id] || "Unknown Item";
     return `
       <div style="padding: 12px; margin-bottom: 12px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -2003,21 +2142,23 @@ async function handleAllReturned() {
 
     // Fetch item names separately
     const itemIds = rentals.map(r => r.item_id).filter(Boolean);
-    
+
     // Try to get names from inventory_items (for bigint IDs)
     const { data: inventoryItems } = await supabase
       .from("inventory_items")
       .select("id, name")
       .in("id", itemIds);
-    
+
     // Try to get names from decorations (for uuid IDs)
     const { data: decorationItems } = await supabase
       .from("decorations")
       .select("id, name")
       .in("id", itemIds);
 
-    // Create a map of item_id -> name
+    // Create a map of item_id -> name and track decorations
     const itemNameMap = {};
+    const decorationIds = new Set();
+
     if (inventoryItems) {
       inventoryItems.forEach(item => {
         itemNameMap[item.id] = item.name;
@@ -2026,21 +2167,35 @@ async function handleAllReturned() {
     if (decorationItems) {
       decorationItems.forEach(item => {
         itemNameMap[item.id] = item.name;
+        decorationIds.add(item.id); // Track decorations
       });
     }
 
-    // Record all items as returned in reports table
-    const returnedReports = rentals.map(rental => ({
-      rental_id: rental.id,
-      item_name: itemNameMap[rental.item_id] || "Unknown Item",
-      quantity: rental.quantity,
-      type: "returned",
-      notes: `All items returned by ${rental.renter_name}`
-    }));
+    // Separate rental items and decorations
+    const rentalItems = rentals.filter(r => !decorationIds.has(r.item_id));
+    const decorationSales = rentals.filter(r => decorationIds.has(r.item_id));
+
+    // Create reports: "returned" for rental items, "sold" for decorations
+    const reports = [
+      ...rentalItems.map(rental => ({
+        rental_id: rental.id,
+        item_name: itemNameMap[rental.item_id] || "Unknown Item",
+        quantity: rental.quantity,
+        type: "returned",
+        notes: `All items returned by ${rental.renter_name}`
+      })),
+      ...decorationSales.map(rental => ({
+        rental_id: rental.id,
+        item_name: itemNameMap[rental.item_id] || "Unknown Item",
+        quantity: rental.quantity,
+        type: "sold",
+        notes: `Decoration sold to ${rental.renter_name}`
+      }))
+    ];
 
     const { error: insertError } = await supabase
       .from("reports")
-      .insert(returnedReports);
+      .insert(reports);
 
     if (insertError) throw insertError;
 
@@ -2080,7 +2235,7 @@ async function handlePartialReturn() {
     // Fetch rental details to get item_id for inventory deduction
     const { data: rentals, error: fetchError } = await supabase
       .from("rentals")
-      .select("id, item_id, quantity, inventory_items ( name )")
+      .select("id, item_id, quantity")
       .in("id", ids);
 
     if (fetchError) throw fetchError;
@@ -2289,6 +2444,15 @@ async function fetchCalendarEvents() {
   } catch (error) {
     console.error("Error fetching calendar events:", error);
     return [];
+  }
+}
+
+// Function to refresh calendar with latest data
+async function refreshCalendar() {
+  if (calendar && window.calendarInitialized) {
+    const events = await fetchCalendarEvents();
+    calendar.removeAllEvents();
+    calendar.addEventSource(events);
   }
 }
 

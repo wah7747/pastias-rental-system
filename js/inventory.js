@@ -1,5 +1,5 @@
 import { supabase } from "./supabase.js";
-import { isLoggedIn, logoutUser, getCurrentUserProfile } from "./auth.js";
+import { isLoggedIn, logoutUser, getCurrentUserProfile, canDelete } from "./auth.js";
 
 // ========== SHARED STATE ==========
 let currentUser = null;
@@ -77,6 +77,7 @@ const cancelModalBtn = document.getElementById("cancelModalBtn");
 const itemName = document.getElementById("itemName");
 const itemCategory = document.getElementById("itemCategory");
 const itemTotal = document.getElementById("itemTotal");
+const itemDamaged = document.getElementById("itemDamaged");
 const itemRentalPrice = document.getElementById("itemRentalPrice");
 const addCategoryBtn = document.getElementById("addCategoryBtn");
 
@@ -115,6 +116,7 @@ function closeItemModal() {
     itemName.value = "";
     itemCategory.value = "";
     itemTotal.value = "";
+    itemDamaged.value = "0";
     itemRentalPrice.value = "";
 }
 
@@ -122,6 +124,7 @@ saveItemBtn?.addEventListener("click", async () => {
     const name = itemName.value.trim();
     const category = itemCategory.value.trim();
     const total = parseInt(itemTotal.value);
+    const damaged = parseInt(itemDamaged.value) || 0;
     const rentalPrice = parseFloat(itemRentalPrice.value) || 0;
 
     if (!name || !category || isNaN(total)) {
@@ -131,6 +134,16 @@ saveItemBtn?.addEventListener("click", async () => {
 
     if (total < 0) {
         alert("Total quantity cannot be negative.");
+        return;
+    }
+
+    if (damaged < 0) {
+        alert("Damaged quantity cannot be negative.");
+        return;
+    }
+
+    if (damaged > total) {
+        alert("Damaged quantity cannot exceed total quantity.");
         return;
     }
 
@@ -145,6 +158,7 @@ saveItemBtn?.addEventListener("click", async () => {
                 category,
                 quantity_total: total,
                 quantity_available: total,
+                quantity_damaged: damaged,
                 rental_price: rentalPrice
             };
 
@@ -158,6 +172,7 @@ saveItemBtn?.addEventListener("click", async () => {
             await logInventoryHistory('updated', editItemId, name, {
                 changes: {
                     quantity: { old: oldItem?.quantity_total, new: total },
+                    damaged: { old: oldItem?.quantity_damaged || 0, new: damaged },
                     rental_price: { old: oldItem?.rental_price, new: rentalPrice }
                 }
             });
@@ -167,6 +182,7 @@ saveItemBtn?.addEventListener("click", async () => {
                 category,
                 quantity_total: total,
                 quantity_available: total,
+                quantity_damaged: damaged,
                 rental_price: rentalPrice
             };
 
@@ -180,6 +196,7 @@ saveItemBtn?.addEventListener("click", async () => {
             if (data && data[0]) {
                 await logInventoryHistory('added', data[0].id, name, {
                     quantity: total,
+                    damaged: damaged,
                     category: category
                 });
             }
@@ -244,7 +261,8 @@ async function loadInventory() {
     const itemsWithAvailability = data.map(item => ({
         ...item,
         currentlyRented: rentedMap[item.id] || 0,
-        realTimeAvailable: item.quantity_total - (rentedMap[item.id] || 0)
+        damagedQty: item.quantity_damaged || 0,
+        realTimeAvailable: item.quantity_total - (rentedMap[item.id] || 0) - (item.quantity_damaged || 0)
     }));
 
     currentData = itemsWithAvailability;
@@ -254,10 +272,14 @@ async function loadInventory() {
 
 function renderItemsTable(data) {
     tbody.innerHTML = "";
+    // Check if user is admin to show delete buttons
+    const isAdmin = currentUser?.role?.toLowerCase() === 'admin';
+
     data.forEach(item => {
         // Use real-time calculated availability if available, otherwise fall back to database value
         const available = item.realTimeAvailable ?? (item.quantity_available ?? item.quantity_total);
         const rented = item.currentlyRented || 0;
+        const damaged = item.damagedQty || item.quantity_damaged || 0;
         const price = item.rental_price ? `₱${parseFloat(item.rental_price).toFixed(2)}` : '₱0.00';
 
         // Add visual indicator if items are currently rented
@@ -268,16 +290,23 @@ function renderItemsTable(data) {
         // Highlight row if availability is low
         const rowStyle = available <= 0 ? 'background-color: #ffebee;' : '';
 
+        // Action buttons: show delete only for admins
+        const actionButtons = isAdmin
+            ? `<button class="btn-edit" data-id="${item.id}">Edit</button>
+               <button class="btn-delete" data-id="${item.id}">Delete</button>`
+            : `<button class="btn-edit" data-id="${item.id}">Edit</button>
+               <span style="color: #999; font-size: 0.85em; font-style: italic;">No permission</span>`;
+
         tbody.innerHTML += `
             <tr data-id="${item.id}" style="${rowStyle}">
                 <td>${item.name}</td>
                 <td>${item.category}</td>
                 <td>${item.quantity_total}</td>
+                <td>${damaged > 0 ? `<span style="color: #f44336; font-weight: 600;">${damaged}</span>` : damaged}</td>
                 <td>${availableDisplay}</td>
                 <td>${price}</td>
                 <td>
-                    <button class="btn-edit" data-id="${item.id}">Edit</button>
-                    <button class="btn-delete" data-id="${item.id}">Delete</button>
+                    ${actionButtons}
                 </td>
             </tr>
         `;
@@ -313,13 +342,23 @@ async function openEditItemModal(id) {
     itemName.value = item.name || '';
     itemCategory.value = item.category || '';
     itemTotal.value = item.quantity_total ?? '';
+    itemDamaged.value = item.quantity_damaged ?? 0;
     itemRentalPrice.value = item.rental_price ?? '';
     itemModal.classList.remove('hidden');
     itemModal.setAttribute('aria-hidden', 'false');
 }
 
 async function deleteItem(id) {
+    // Check permission
+    if (!await canDelete()) {
+        alert("Permission denied. Only Admins can delete items.");
+        return;
+    }
+
     try {
+        // Get item details before archiving for history logging
+        const item = currentData.find(i => i.id === parseInt(id));
+
         const { error } = await supabase
             .from('inventory_items')
             .update({ archived: true })
@@ -328,6 +367,15 @@ async function deleteItem(id) {
             alert('Failed to archive item. ' + (error.message || JSON.stringify(error)));
             return;
         }
+
+        // Log deletion to history
+        if (item) {
+            await logInventoryHistory('deleted', item.id, item.name, {
+                category: item.category,
+                quantity: item.quantity_total
+            });
+        }
+
         await loadInventory();
     } catch (err) {
         alert('Unexpected error archiving item.');
@@ -356,6 +404,7 @@ const cancelDecorationModalBtn = document.getElementById("cancelDecorationModalB
 const decorationName = document.getElementById("decorationName");
 const decorationType = document.getElementById("decorationType");
 const decorationTotal = document.getElementById("decorationTotal");
+const decorationDamaged = document.getElementById("decorationDamaged");
 const decorationRentalPrice = document.getElementById("decorationRentalPrice");
 const addDecorationTypeBtn = document.getElementById("addDecorationTypeBtn");
 
@@ -394,6 +443,7 @@ function closeDecorationModal() {
     decorationName.value = "";
     decorationType.value = "";
     decorationTotal.value = "";
+    decorationDamaged.value = "0";
     decorationRentalPrice.value = "";
 }
 
@@ -401,6 +451,7 @@ saveDecorationBtn?.addEventListener("click", async () => {
     const name = decorationName.value.trim();
     const type = decorationType.value.trim();
     const total = parseInt(decorationTotal.value);
+    const damaged = parseInt(decorationDamaged.value) || 0;
     const rentalPrice = parseFloat(decorationRentalPrice.value) || 0;
 
     if (!name || !type || isNaN(total)) {
@@ -410,6 +461,16 @@ saveDecorationBtn?.addEventListener("click", async () => {
 
     if (total < 0) {
         alert("Total quantity cannot be negative.");
+        return;
+    }
+
+    if (damaged < 0) {
+        alert("Damaged quantity cannot be negative.");
+        return;
+    }
+
+    if (damaged > total) {
+        alert("Damaged quantity cannot exceed total quantity.");
         return;
     }
 
@@ -424,6 +485,7 @@ saveDecorationBtn?.addEventListener("click", async () => {
                 type,
                 quantity_total: total,
                 quantity_available: total,
+                quantity_damaged: damaged,
                 rental_price: rentalPrice
             };
 
@@ -437,6 +499,7 @@ saveDecorationBtn?.addEventListener("click", async () => {
             await logDecorationHistory('updated', editDecorationId, name, {
                 changes: {
                     quantity: { old: oldDecoration?.quantity_total, new: total },
+                    damaged: { old: oldDecoration?.quantity_damaged || 0, new: damaged },
                     rental_price: { old: oldDecoration?.rental_price, new: rentalPrice }
                 }
             });
@@ -446,6 +509,7 @@ saveDecorationBtn?.addEventListener("click", async () => {
                 type,
                 quantity_total: total,
                 quantity_available: total,
+                quantity_damaged: damaged,
                 rental_price: rentalPrice
             };
 
@@ -459,6 +523,7 @@ saveDecorationBtn?.addEventListener("click", async () => {
             if (data && data[0]) {
                 await logDecorationHistory('added', data[0].id, name, {
                     quantity: total,
+                    damaged: damaged,
                     type: type
                 });
             }
@@ -525,7 +590,8 @@ async function loadDecorations() {
     const decorationsWithAvailability = data.map(item => ({
         ...item,
         currentlyRented: rentedMap[item.id] || 0,
-        realTimeAvailable: item.quantity_total - (rentedMap[item.id] || 0)
+        damagedQty: item.quantity_damaged || 0,
+        realTimeAvailable: item.quantity_total - (rentedMap[item.id] || 0) - (item.quantity_damaged || 0)
     }));
 
     decorationsData = decorationsWithAvailability;
@@ -535,10 +601,14 @@ async function loadDecorations() {
 
 function renderDecorationsTable(data) {
     decorationsTbody.innerHTML = "";
+    // Check if user is admin to show delete buttons
+    const isAdmin = currentUser?.role?.toLowerCase() === 'admin';
+
     data.forEach(item => {
         // Use real-time calculated availability if available, otherwise fall back to database value
         const available = item.realTimeAvailable ?? (item.quantity_available ?? item.quantity_total);
         const rented = item.currentlyRented || 0;
+        const damaged = item.damagedQty || item.quantity_damaged || 0;
         const price = item.rental_price ? `₱${parseFloat(item.rental_price).toFixed(2)}` : '₱0.00';
 
         // Add visual indicator if items are currently rented
@@ -549,16 +619,23 @@ function renderDecorationsTable(data) {
         // Highlight row if availability is low
         const rowStyle = available <= 0 ? 'background-color: #ffebee;' : '';
 
+        // Action buttons: show delete only for admins
+        const actionButtons = isAdmin
+            ? `<button class="btn-edit-decoration" data-id="${item.id}">Edit</button>
+               <button class="btn-delete-decoration" data-id="${item.id}">Delete</button>`
+            : `<button class="btn-edit-decoration" data-id="${item.id}">Edit</button>
+               <span style="color: #999; font-size: 0.85em; font-style: italic;">No permission</span>`;
+
         decorationsTbody.innerHTML += `
             <tr data-id="${item.id}" style="${rowStyle}">
                 <td>${item.name}</td>
                 <td>${item.type}</td>
                 <td>${item.quantity_total}</td>
+                <td>${damaged > 0 ? `<span style="color: #f44336; font-weight: 600;">${damaged}</span>` : damaged}</td>
                 <td>${availableDisplay}</td>
                 <td>${price}</td>
                 <td>
-                    <button class="btn-edit-decoration" data-id="${item.id}">Edit</button>
-                    <button class="btn-delete-decoration" data-id="${item.id}">Delete</button>
+                    ${actionButtons}
                 </td>
             </tr>
         `;
@@ -594,13 +671,23 @@ async function openEditDecorationModal(id) {
     decorationName.value = item.name || '';
     decorationType.value = item.type || '';
     decorationTotal.value = item.quantity_total ?? '';
+    decorationDamaged.value = item.quantity_damaged ?? 0;
     decorationRentalPrice.value = item.rental_price ?? '';
     decorationModal.classList.remove('hidden');
     decorationModal.setAttribute('aria-hidden', 'false');
 }
 
 async function deleteDecoration(id) {
+    // Check permission
+    if (!await canDelete()) {
+        alert("Permission denied. Only Admins can delete decorations.");
+        return;
+    }
+
     try {
+        // Get decoration details before archiving for history logging
+        const decoration = decorationsData.find(d => d.id === parseInt(id));
+
         const { error } = await supabase
             .from('decorations')
             .update({ archived: true })
@@ -609,6 +696,15 @@ async function deleteDecoration(id) {
             alert('Failed to archive decoration. ' + (error.message || JSON.stringify(error)));
             return;
         }
+
+        // Log deletion to history
+        if (decoration) {
+            await logDecorationHistory('deleted', decoration.id, decoration.name, {
+                type: decoration.type,
+                quantity: decoration.quantity_total
+            });
+        }
+
         await loadDecorations();
     } catch (err) {
         alert('Unexpected error archiving decoration.');

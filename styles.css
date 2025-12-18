@@ -132,7 +132,7 @@ html {
   right: 0;
   bottom: 0;
   background-image: radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 50%),
-                    radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.03) 0%, transparent 50%);
+    radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.03) 0%, transparent 50%);
   pointer-events: none;
 }
 
@@ -680,6 +680,7 @@ table tbody tr:nth-child(even):hover {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -690,6 +691,7 @@ table tbody tr:nth-child(even):hover {
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -701,6 +703,7 @@ table tbody tr:nth-child(even):hover {
     opacity: 0;
     transform: translateY(40px) scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -708,9 +711,12 @@ table tbody tr:nth-child(even):hover {
 }
 
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.8;
   }
@@ -747,16 +753,51 @@ table tbody tr:nth-child(even):hover {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    padding: var(--space-4);
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .brand {
+    margin-bottom: 0;
   }
 
   .nav {
     flex-direction: row;
+    gap: var(--space-2);
+    flex: 1;
+    justify-content: center;
     overflow-x: auto;
+    padding: 0 var(--space-2);
+    /* Hide scrollbar but keep functionality */
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE/Edge */
+  }
+
+  .nav::-webkit-scrollbar {
+    display: none;
+    /* Chrome/Safari */
   }
 
   .nav-item {
+    flex-direction: column;
+    gap: 4px;
+    padding: var(--space-2);
+    min-width: auto;
+    font-size: 10px;
+    text-align: center;
     white-space: nowrap;
+  }
+
+  .nav-item svg {
+    width: 24px;
+    height: 24px;
+    margin: 0;
+  }
+
+  /* Show only icons, hide text on very small screens */
+  .nav-item {
+    position: relative;
   }
 
   .content {
@@ -789,25 +830,37 @@ table tbody tr:nth-child(even):hover {
   }
 
   .sidebar {
-    padding: var(--space-3);
+    padding: var(--space-2) var(--space-3);
   }
 
   .brand-name {
-    font-size: 13px;
+    font-size: 12px;
   }
 
   .brand-subtitle {
-    font-size: 11px;
+    display: none;
+    /* Hide subtitle on very small screens */
+  }
+
+  .nav {
+    gap: var(--space-1);
   }
 
   .nav-item {
-    font-size: 13px;
-    padding: var(--space-2);
+    font-size: 9px;
+    padding: var(--space-1) var(--space-2);
+    gap: 2px;
+  }
+
+  .nav-item svg {
+    width: 20px;
+    height: 20px;
   }
 }
 
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
