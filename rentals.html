@@ -289,7 +289,7 @@
 
           <div class="form-row">
             <div class="form-group">
-              <label for="paymentAmount">Amount (Auto-calculated)</label>
+              <label for="paymentAmount">Total Amount (Auto-calculated)</label>
               <input type="number" id="paymentAmount" value="0" min="0" readonly>
               <small id="priceCalculation"
                 style="color: #666; font-size: 0.85rem; display: block; margin-top: 4px;">Select item and
@@ -301,6 +301,30 @@
                 <option value="Cash">Cash</option>
                 <option value="GCash">GCash</option>
               </select>
+            </div>
+          </div>
+
+          <!-- Advance Payment Section -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="advancePayment">Advance Payment (Optional)</label>
+              <input type="number" id="advancePayment" value="0" min="0" step="0.01" placeholder="Enter advance amount">
+              <small style="color: #666; font-size: 0.85rem; display: block; margin-top: 4px;">Amount paid
+                upfront</small>
+            </div>
+            <div class="form-group">
+              <label>Balance Due</label>
+              <div id="balanceDue" style="
+                padding: 10px 12px;
+                background: #f8f9fa;
+                border: 2px solid #dee2e6;
+                border-radius: 8px;
+                font-size: 1.1rem;
+                font-weight: 700;
+                color: #495057;
+                text-align: center;
+              ">₱0.00</div>
+              <small style="color: #666; font-size: 0.85rem; display: block; margin-top: 4px;">Remaining balance</small>
             </div>
           </div>
 

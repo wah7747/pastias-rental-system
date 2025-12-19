@@ -22,6 +22,8 @@ const rentalStatus = document.getElementById("rentalStatus");
 const availabilityInfo = document.getElementById("availabilityInfo");
 const priceCalculation = document.getElementById("priceCalculation");
 const customPriceCheckbox = document.getElementById("customPriceCheckbox");
+const advancePayment = document.getElementById("advancePayment"); // New
+const balanceDue = document.getElementById("balanceDue"); // New
 
 // Cart Elements
 const addToCartBtn = document.getElementById("addToCartBtn");
@@ -76,6 +78,49 @@ function calculateRentalDays(startDate, endDate) {
   return Math.max(1, diffDays);
 }
 
+/**
+ * Calculate balance due and auto-set payment status
+ * Called whenever advance payment or total amount changes
+ */
+function calculateBalance() {
+  const total = parseFloat(paymentAmount.value) || 0;
+  const advance = parseFloat(advancePayment.value) || 0;
+
+  // Validate: advance cannot exceed total
+  if (advance > total) {
+    advancePayment.value = total.toFixed(2);
+    const cappedAdvance = total;
+    const balance = 0;
+    balanceDue.textContent = `₱${balance.toFixed(2)}`;
+    balanceDue.style.color = "#4caf50"; // Green for paid in full
+    paymentStatus.value = "Paid";
+    return;
+  }
+
+  const balance = total - advance;
+  balanceDue.textContent = `₱${balance.toFixed(2)}`;
+
+  // Color coding for balance
+  if (balance === 0) {
+    balanceDue.style.color = "#4caf50"; // Green - paid in full
+  } else if (advance > 0) {
+    balanceDue.style.color = "#FF9800"; // Orange - partial
+  } else {
+    balanceDue.style.color = "#666"; // Gray - no payment yet
+  }
+
+  // Auto-set payment status (unless user has custom price enabled)
+  if (!customPriceCheckbox.checked) {
+    if (advance === 0) {
+      paymentStatus.value = "Pending";
+    } else if (balance === 0) {
+      paymentStatus.value = "Paid";
+    } else {
+      paymentStatus.value = "Partial";
+    }
+  }
+}
+
 // ---------- INIT ----------
 document.addEventListener("DOMContentLoaded", async () => {
   const logged = await isLoggedIn();
@@ -113,6 +158,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     }, 100);
   }
+
+  // Advance Payment Event Listeners
+  advancePayment?.addEventListener("input", calculateBalance);
+  paymentAmount?.addEventListener("change", calculateBalance);
 });
 
 // ---------- MODAL HANDLERS ----------
@@ -302,6 +351,7 @@ function openModal(rental = null) {
     paymentMethod.value = rental.payment_method || "Cash";
     paymentStatus.value = rental.payment_status || "Pending";
     rentalStatus.value = rental.status || "active";
+    advancePayment.value = rental.advance_payment || 0; // Populate advance payment
 
     // Reset item selector to empty (will add via cart)
     rentalItem.value = "";
@@ -358,6 +408,7 @@ function openModal(rental = null) {
     returnDate.value = tmr.toISOString().split('T')[0];
 
     paymentAmount.value = 0;
+    advancePayment.value = 0; // Reset advance payment for new rental
     paymentMethod.value = "Cash";
     paymentStatus.value = "Pending";
     rentalStatus.value = "active";
@@ -1152,7 +1203,8 @@ saveRentalBtn?.addEventListener("click", async () => {
             status: selectedStatus,
             item_id: rental.item_id,
             quantity: rental.quantity,
-            payment_amount: rental.itemPrice * rental.quantity
+            payment_amount: rental.itemPrice * rental.quantity,
+            advance_payment: parseFloat(advancePayment.value) || 0 // Add advance payment
           };
           if (['active', 'reserved'].includes(selectedStatus)) {
             payload.archived = false;
@@ -1238,7 +1290,8 @@ saveRentalBtn?.addEventListener("click", async () => {
             payment_amount: cartItem.subtotal,
             payment_method: sharedPaymentMethod,
             payment_status: sharedPaymentStatus,
-            status: selectedStatus
+            status: selectedStatus,
+            advance_payment: parseFloat(advancePayment.value) || 0 // Add advance payment
           };
 
           if (['active', 'reserved'].includes(selectedStatus)) {
@@ -1341,7 +1394,8 @@ saveRentalBtn?.addEventListener("click", async () => {
               payment_amount: cartItem.subtotal,
               payment_method: sharedPaymentMethod,
               payment_status: sharedPaymentStatus,
-              status: selectedStatus
+              status: selectedStatus,
+              advance_payment: parseFloat(advancePayment.value) || 0 // Add advance payment
             };
 
             if (['active', 'reserved'].includes(selectedStatus)) {
@@ -1517,7 +1571,7 @@ async function loadRentals() {
 
   let query = supabase
     .from("rentals")
-    .select("id, item_id, renter_name, client_phone, client_address, quantity, rent_date, return_date, payment_amount, payment_status, status, archived")
+    .select("id, item_id, renter_name, client_phone, client_address, quantity, rent_date, return_date, payment_amount, advance_payment, payment_status, payment_method, status, archived")
     .order("rent_date", { ascending: false });
 
   // Filter based on toggle
@@ -1582,7 +1636,8 @@ async function loadRentals() {
     groupedRentals[groupKey].items.push({
       name: itemNameMap[String(r.item_id)] || "Unknown Item",
       quantity: r.quantity,
-      payment: r.payment_amount
+      payment: r.payment_amount,
+      advance: r.advance_payment || 0
     });
     groupedRentals[groupKey].rentalIds.push(r.id);
   });
@@ -1598,9 +1653,11 @@ async function loadRentals() {
       `${item.name} (${item.quantity})`
     ).join(', ');
 
-    // Sum up total quantity and payment
+    // Sum up total quantity, payment, and advance
     const totalQuantity = group.items.reduce((sum, item) => sum + item.quantity, 0);
     const totalPayment = group.items.reduce((sum, item) => sum + parseFloat(item.payment || 0), 0);
+    // For advance, take the first item's advance (all items in group share same advance)
+    const totalAdvance = group.items.length > 0 ? (parseFloat(group.items[0].advance) || 0) : 0;
 
     const statusClass = getStatusClass(group.status);
 
@@ -1646,7 +1703,7 @@ async function loadRentals() {
   <td>${totalQuantity}</td>
   <td>${group.rent_date}</td>
   <td>${group.return_date || "-"}</td>
-  <td>${group.payment_status} (₱${totalPayment.toFixed(2)})</td>
+  <td>${group.payment_status} (₱${(totalPayment - totalAdvance).toFixed(2)})</td>
   <td><span class="status-badge ${statusClass}" style="padding: 4px 12px; border-radius: 4px; background-color: ${getStatusColor(group.status)}; text-transform: uppercase; font-weight: 600; font-size: 11px;">${getStatusLabel(group.status)}</span></td>
   <td style="white-space: nowrap;">
     ${actionButtons}
