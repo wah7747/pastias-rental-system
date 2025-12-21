@@ -3091,13 +3091,13 @@ function handleCalendarEventClick(info) {
   // Check if this is an availability event or rental event
   if (info.event.extendedProps.availabilityData) {
     const data = info.event.extendedProps.availabilityData;
-    let message = `${data.item} Availability\\n\\nDate: ${info.event.startStr}\\nStatus: ${data.status}\\nAvailable: ${data.available}/${data.total}\\nBooked: ${data.booked}`;
+    let message = `${data.item} Availability\n\nDate: ${info.event.startStr}\nStatus: ${data.status}\nAvailable: ${data.available}/${data.total}\nBooked: ${data.booked}`;
 
     if (data.rentals.length > 0) {
-      message += `\\n\\nBookings on this date:`;
+      message += `\n\nBookings on this date:`;
       data.rentals.forEach((r, i) => {
         const timeStr = r.rent_time && r.return_time ? ` (${formatTime(r.rent_time)}-${formatTime(r.return_time)})` : '';
-        message += `\\n${i + 1}. ${r.renter_name}: ${r.quantity} units${timeStr}`;
+        message += `\n${i + 1}. ${r.renter_name}: ${r.quantity} units${timeStr}`;
       });
     }
 
@@ -3105,13 +3105,13 @@ function handleCalendarEventClick(info) {
   } else {
     // Regular rental event
     const rental = info.event.extendedProps.rentalData;
-    let message = `Rental Details:\\n\\nCustomer: ${rental.renter_name}\\nDates: ${rental.rent_date} to ${rental.return_date}`;
+    let message = `Rental Details:\n\nCustomer: ${rental.renter_name}\nDates: ${rental.rent_date} to ${rental.return_date}`;
 
     if (rental.rent_time && rental.return_time) {
-      message += `\\nTime: ${formatTime(rental.rent_time)} - ${formatTime(rental.return_time)}`;
+      message += `\nTime: ${formatTime(rental.rent_time)} - ${formatTime(rental.return_time)}`;
     }
 
-    message += `\\nStatus: ${rental.status}\\nPayment: ₱${rental.payment_amount}`;
+    message += `\nStatus: ${rental.status}\nPayment: ₱${rental.payment_amount}`;
     Toast.info(message);
   }
 }
