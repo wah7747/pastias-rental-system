@@ -1539,7 +1539,8 @@ saveRentalBtn?.addEventListener("click", async () => {
           payment_amount: cartItem.subtotal,
           payment_method: sharedPaymentMethod,
           payment_status: sharedPaymentStatus,
-          status: selectedStatus
+          status: selectedStatus,
+          advance_payment: parseFloat(advancePayment.value) || 0 // Add advance payment
         };
 
         if (['active', 'reserved'].includes(selectedStatus)) {
