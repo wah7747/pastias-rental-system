@@ -167,8 +167,6 @@ async function fetchRentalEvents() {
 
     // Transform to calendar events
     return rentals.map(rental => {
-        let title = `${rental.renter_name} - ${itemMap[String(rental.item_id)] || 'Unknown'}`;
-
         // Determine if this is a timed event or all-day event
         const hasTime = rental.rent_time && rental.return_time;
 
@@ -178,11 +176,16 @@ async function fetchRentalEvents() {
             hasTime: hasTime
         });
 
-        // Add time info to title if present
+        // Create concise title
+        let title;
         if (hasTime) {
+            // Shortened format: "7:30AM-3:30PM xavier"
             const startTime = formatTime(rental.rent_time);
             const endTime = formatTime(rental.return_time);
-            title = `${startTime}-${endTime}: ${title}`;
+            title = `${startTime}-${endTime} ${rental.renter_name}`;
+        } else {
+            // All-day: just customer name
+            title = rental.renter_name;
         }
 
         // Create event object
@@ -326,8 +329,14 @@ function formatTime(timeString) {
     if (!timeString) return '';
     const [hours, minutes] = timeString.split(':');
     const h = parseInt(hours);
+
+    // Determine AM/PM
     const ampm = h >= 12 ? 'PM' : 'AM';
-    const h12 = h % 12 || 12;
+
+    // Convert to 12-hour format
+    let h12 = h % 12;
+    if (h12 === 0) h12 = 12; // Handle midnight (0) and noon (12)
+
     return `${h12}:${minutes}${ampm}`;
 }
 
