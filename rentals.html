@@ -466,6 +466,30 @@
           <div id="damageItemsList" style="max-height: 400px; overflow-y: auto;">
             <!-- Damage items inputs will be generated here -->
           </div>
+
+          <!-- Penalty Section -->
+          <div
+            style="margin-top: 1.5rem; padding: 1rem; background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px;">
+            <h4 style="margin: 0 0 1rem 0; color: #856404; font-size: 0.95rem;">💰 Penalty/Damage Charges</h4>
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px;">
+              <div>
+                <label for="penaltyAmount" style="display: block; margin-bottom: 4px; font-weight: 600;">Penalty
+                  Amount</label>
+                <input type="number" id="penaltyAmount" min="0" step="0.01" value="0" placeholder="0.00"
+                  style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px;">
+              </div>
+              <div>
+                <label for="penaltyReason" style="display: block; margin-bottom: 4px; font-weight: 600;">Penalty
+                  Reason</label>
+                <input type="text" id="penaltyReason" placeholder="e.g., Broken chair leg, stained tablecloth"
+                  style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px;">
+              </div>
+            </div>
+            <p style="margin: 0.5rem 0 0; font-size: 0.85rem; color: #856404;">
+              ℹ️ Add charges for damaged items. This will be saved with the rental record.
+            </p>
+          </div>
+
           <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 2px solid #eee;">
             <label for="damageNotes" style="display: block; margin-bottom: 8px; font-weight: 600;">Damage Description
               *</label>
@@ -558,6 +582,130 @@
             </div>
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- View Transaction Modal (Read-Only) -->
+  <div id="viewRentalModal" class="modal hidden" aria-hidden="true" role="dialog">
+    <div id="viewRental Overlay" class="modal-overlay"></div>
+    <div class="modal-card" style="max-width: 900px; width: 90%;">
+      <div class="modal-header">
+        <h2>📋 Transaction Details</h2>
+        <button id="closeViewRentalBtn" class="close-modal-btn"
+          style="background:none; border:none; font-size:24px; cursor:pointer;">&times;</button>
+      </div>
+      <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+
+        <!-- Customer Information -->
+        <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+          <h3 style="margin: 0 0 0.75rem 0; color: #2196F3; font-size: 1rem;">👤 Customer Information</h3>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+            <div>
+              <strong style="font-size: 0.85rem; color: #666;">Name:</strong>
+              <p id="viewClientName" style="margin: 4px 0 0; font-size: 0.95rem;">-</p>
+            </div>
+            <div>
+              <strong style="font-size: 0.85rem; color: #666;">Phone:</strong>
+              <p id="viewClientPhone" style="margin: 4px 0 0; font-size: 0.95rem;">-</p>
+            </div>
+            <div>
+              <strong style="font-size: 0.85rem; color: #666;">Address:</strong>
+              <p id="viewClientAddress" style="margin: 4px 0 0; font-size: 0.95rem;">-</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rental Details -->
+        <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+          <h3 style="margin: 0 0 0.75rem 0; color: #2196F3; font-size: 1rem;">📅 Rental Schedule</h3>
+          <div id="viewScheduleGrid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+            <div>
+              <strong style="font-size: 0.85rem; color: #666;">Rental Date:</strong>
+              <p id="viewRentalDate" style="margin: 4px 0 0; font-size: 0.95rem;">-</p>
+            </div>
+            <div>
+              <strong style="font-size: 0.85rem; color: #666;">Return Date:</strong>
+              <p id="viewReturnDate" style="margin: 4px 0 0; font-size: 0.95rem;">-</p>
+            </div>
+            <div id="viewTimeSection" style="display: none;">
+              <strong style="font-size: 0.85rem; color: #666;">Start Time:</strong>
+              <p id="viewRentalTime" style="margin: 4px 0 0; font-size: 0.95rem;">-</p>
+            </div>
+            <div id="viewEndTimeSection" style="display: none;">
+              <strong style="font-size: 0.85rem; color: #666;">End Time:</strong>
+              <p id="viewReturnTime" style="margin: 4px 0 0; font-size: 0.95rem;">-</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Items List -->
+        <div
+          style="margin-bottom: 1.5rem; padding: 1rem; background: #fff; border: 2px solid #2196F3; border-radius: 8px;">
+          <h3 style="margin: 0 0 0.75rem 0; color: #2196F3; font-size: 1rem;">🛒 Rented Items</h3>
+          <div id="viewItemsList" style="overflow-x: auto;">
+            <!-- Items will be populated here -->
+          </div>
+        </div>
+
+        <!-- Payment Information -->
+        <div style="margin-bottom: 1.5rem; padding: 1rem; background: #e8f5e9; border-radius: 8px;">
+          <h3 style="margin: 0 0 0.75rem 0; color: #4caf50; font-size: 1rem;">💰 Payment Information</h3>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+            <div>
+              <strong style="font-size: 0.85rem; color: #666;">Total Amount:</strong>
+              <p id="viewPaymentAmount" style="margin: 4px 0 0; font-size: 1.1rem; font-weight: 700; color: #4caf50;">-
+              </p>
+            </div>
+            <div>
+              <strong style="font-size: 0.85rem; color: #666;">Advance Payment:</strong>
+              <p id="viewAdvancePayment" style="margin: 4px 0 0; font-size: 0.95rem;">₱0.00</p>
+            </div>
+            <div>
+              <strong style="font-size: 0.85rem; color: #666;">Balance Due:</strong>
+              <p id="viewBalanceDue" style="margin: 4px 0 0; font-size: 0.95rem;">₱0.00</p>
+            </div>
+            <div>
+              <strong style="font-size: 0.85rem; color: #666;">Payment Method:</strong>
+              <p id="viewPaymentMethod" style="margin: 4px 0 0; font-size: 0.95rem;">-</p>
+            </div>
+            <div>
+              <strong style="font-size: 0.85rem; color: #666;">Payment Status:</strong>
+              <p id="viewPaymentStatus" style="margin: 4px 0 0; font-size: 0.95rem;">-</p>
+            </div>
+            <div>
+              <strong style="font-size: 0.85rem; color: #666;">Rental Status:</strong>
+              <p id="viewRentalStatus" style="margin: 4px 0 0; font-size: 0.95rem;">-</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Penalty Information (if applicable) -->
+        <div id="viewPenaltySection"
+          style="display: none; margin-bottom: 1.5rem; padding: 1rem; background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px;">
+          <h3 style="margin: 0 0 0.75rem 0; color: #856404; font-size: 1rem;">⚠️ Penalty/Damage Charges</h3>
+          <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px;">
+            <div>
+              <strong style="font-size: 0.85rem; color: #666;">Penalty Amount:</strong>
+              <p id="viewPenaltyAmount" style="margin: 4px 0 0; font-size: 1.1rem; font-weight: 700; color: #d32f2f;">
+                ₱0.00</p>
+            </div>
+            <div>
+              <strong style="font-size: 0.85rem; color: #666;">Reason:</strong>
+              <p id="viewPenaltyReason" style="margin: 4px 0 0; font-size: 0.95rem;">-</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Transaction ID -->
+        <div style="margin-top: 1rem; padding: 0.75rem; background: #f8f9fa; border-radius: 6px; text-align: center;">
+          <small style="color: #666; font-size: 0.8rem;">Transaction ID: <span id="viewTransactionId"
+              style="font-family: monospace; font-weight: 600;">-</span></small>
+        </div>
+
+      </div>
+      <div class="modal-footer" style="margin-top: 20px;">
+        <button id="closeViewRentalBtn2" class="secondary-button" style="width:100%">Close</button>
       </div>
     </div>
   </div>

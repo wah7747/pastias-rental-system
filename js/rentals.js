@@ -3115,3 +3115,140 @@ function handleCalendarEventClick(info) {
     Toast.info(message);
   }
 }
+
+// ========== VIEW RENTAL (READ-ONLY) ==========
+
+// View modal elements
+const viewRentalModal = document.getElementById('viewRentalModal');
+const closeViewRentalBtns = [
+  document.getElementById('closeViewRentalBtn'),
+  document.getElementById('closeViewRentalBtn2')
+];
+
+//Close view modal handlers
+closeViewRentalBtns.forEach(btn => {
+  btn?.addEventListener('click', () => {
+    viewRentalModal?.classList.add('hidden');
+    viewRentalModal?.setAttribute('aria-hidden', 'true');
+  });
+});
+
+// Expose viewRental function globally
+window.viewRental = async function (id) {
+  try {
+    // Fetch rental data
+    const { data: rental, error } = await supabase
+      .from('rentals')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error || !rental) {
+      Toast.error('Error loading rental details');
+      return;
+    }
+
+    // Populate customer info
+    document.getElementById('viewClientName').textContent = rental.renter_name || '-';
+    document.getElementById('viewClientPhone').textContent = rental.client_phone || '-';
+    document.getElementById('viewClientAddress').textContent = rental.client_address || '-';
+
+    // Populate rental schedule
+    document.getElementById('viewRentalDate').textContent = rental.rent_date || '-';
+    document.getElementById('viewReturnDate').textContent = rental.return_date || '-';
+
+    // Show time fields if present
+    if (rental.rent_time) {
+      document.getElementById('viewTimeSection').style.display = 'block';
+      document.getElementById('viewRentalTime').textContent = rental.rent_time;
+    } else {
+      document.getElementById('viewTimeSection').style.display = 'none';
+    }
+
+    if (rental.return_time) {
+      document.getElementById('viewEndTimeSection').style.display = 'block';
+      document.getElementById('viewReturnTime').textContent = rental.return_time;
+    } else {
+      document.getElementById('viewEndTimeSection').style.display = 'none';
+    }
+
+    // Populate items list
+    const item = allItems.find(i => String(i.id) === String(rental.item_id));
+    const itemName = item ? item.name : 'Unknown Item';
+
+    const itemsHtml = `
+      <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+        <thead>
+          <tr style="background: #e3f2fd;">
+            <th style="padding: 8px; text-align: left; border-bottom: 2px solid #2196F3;">Item</th>
+            <th style="padding: 8px; text-align: center; border-bottom: 2px solid #2196F3;">Quantity</th>
+            <th style="padding: 8px; text-align: right; border-bottom: 2px solid #2196F3;">Price/Unit</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding: 8px; border-bottom: 1px solid #eee;">${itemName}</td>
+            <td style="padding: 8px; text-align: center; border-bottom: 1px solid #eee;">${rental.quantity || 1}</td>
+            <td style="padding: 8px; text-align: right; border-bottom: 1px solid #eee;">₱${(item?.rental_price || 0).toFixed(2)}</td>
+          </tr>
+        </tbody>
+      </table>
+    `;
+    document.getElementById('viewItemsList').innerHTML = itemsHtml;
+
+    // Populate payment info
+    const total = parseFloat(rental.payment_amount) || 0;
+    const advance = parseFloat(rental.advance_payment) || 0;
+    const balance = total - advance;
+
+    document.getElementById('viewPaymentAmount').textContent = `₱${total.toFixed(2)}`;
+    document.getElementById('viewAdvancePayment').textContent = `₱${advance.toFixed(2)}`;
+    document.getElementById('viewBalanceDue').textContent = `₱${balance.toFixed(2)}`;
+    document.getElementById('viewPaymentMethod').textContent = rental.payment_method || 'Cash';
+    document.getElementById('viewPaymentStatus').textContent = rental.payment_status || 'Pending';
+    document.getElementById('viewRentalStatus').textContent = rental.status || 'active';
+
+    // Show penalty section if applicable
+    const penaltyAmount = parseFloat(rental.penalty_amount) || 0;
+    if (penaltyAmount > 0) {
+      document.getElementById('viewPenaltySection').style.display = 'block';
+      document.getElementById('viewPenaltyAmount').textContent = `₱${penaltyAmount.toFixed(2)}`;
+      document.getElementById('viewPenaltyReason').textContent = rental.penalty_reason || '-';
+    } else {
+      document.getElementById('viewPenaltySection').style.display = 'none';
+    }
+
+    // Show transaction ID
+    document.getElementById('viewTransactionId').textContent = rental.id;
+
+    // Show modal
+    viewRentalModal.classList.remove('hidden');
+    viewRentalModal.setAttribute('aria-hidden', 'false');
+  } catch (error) {
+    console.error('Error viewing rental:', error);
+    Toast.error('Failed to load rental details');
+  }
+};
+
+// ========== PENALTY SYSTEM ==========
+
+// Export penalty save function
+window.savePenaltyToRental = async function (rentalId, penaltyAmount, penaltyReason) {
+  try {
+    const { error } = await supabase
+      .from('rentals')
+      .update({
+        penalty_amount: penaltyAmount,
+        penalty_reason: penaltyReason
+      })
+      .eq('id', rentalId);
+
+    if (error) throw error;
+    console.log('Penalty saved successfully');
+    return true;
+  } catch (error) {
+    console.error('Error saving penalty:', error);
+    Toast.error('Failed to save penalty information');
+    return false;
+  }
+};
