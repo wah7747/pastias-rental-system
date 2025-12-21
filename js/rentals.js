@@ -340,13 +340,23 @@ function openModal(rental = null) {
     const originalRentalDate = document.getElementById("originalRentalDate");
     const originalReturnDate = document.getElementById("originalReturnDate");
 
-    if (originalDatesSection && rescheduleSectionHeader) {
-      originalDatesSection.style.display = "block";
-      rescheduleSectionHeader.style.display = "block";
+    console.log("=== EDIT MODE: Showing reschedule sections ===");
+    console.log("originalDatesSection found:", !!originalDatesSection);
+    console.log("rescheduleSectionHeader found:", !!rescheduleSectionHeader);
 
-      if (originalRentalDate) originalRentalDate.value = rental.rent_date || "";
-      if (originalReturnDate) originalReturnDate.value = rental.return_date || "";
+    // Show original dates and reschedule header for ALL edit modes (rental and sale)
+    if (originalDatesSection) {
+      originalDatesSection.style.display = "block";
+      console.log("✓ originalDatesSection display set to block");
     }
+
+    if (rescheduleSectionHeader) {
+      rescheduleSectionHeader.style.display = "block";
+      console.log("✓ rescheduleSectionHeader display set to block");
+    }
+
+    if (originalRentalDate) originalRentalDate.value = rental.rent_date || "";
+    if (originalReturnDate) originalReturnDate.value = rental.return_date || "";
 
     paymentMethod.value = rental.payment_method || "Cash";
     paymentStatus.value = rental.payment_status || "Pending";
