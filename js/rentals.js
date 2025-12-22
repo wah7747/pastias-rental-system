@@ -1307,6 +1307,17 @@ saveRentalBtn?.addEventListener("click", async () => {
       }
 
       try {
+        // Fetch the existing rental to get current dates for reschedule tracking
+        const { data: existingRental, error: fetchError } = await supabase
+          .from('rentals')
+          .select('rent_date, return_date, original_rent_date, original_return_date')
+          .eq('id', editRentalId)
+          .single();
+
+        if (fetchError) {
+          console.error('Error fetching existing rental:', fetchError);
+        }
+
         // Check if this is a simple single-item edit (same item, just updating details)
         const isSingleItemEdit = cartItems.length === 1 &&
           cartItems[0].existingRentalId === editRentalId;
@@ -1331,6 +1342,22 @@ saveRentalBtn?.addEventListener("click", async () => {
             status: selectedStatus,
             advance_payment: parseFloat(advancePayment.value) || 0 // Add advance payment
           };
+
+          // Track original dates if dates are being changed
+          if (existingRental) {
+            const datesChanged = existingRental.rent_date !== sharedRentalDate ||
+              existingRental.return_date !== sharedReturnDate;
+
+            if (datesChanged) {
+              // Store original dates if not already set (first reschedule)
+              rentalPayload.original_rent_date = existingRental.original_rent_date || existingRental.rent_date;
+              rentalPayload.original_return_date = existingRental.original_return_date || existingRental.return_date;
+            } else if (existingRental.original_rent_date) {
+              // Preserve existing original dates even if not changing
+              rentalPayload.original_rent_date = existingRental.original_rent_date;
+              rentalPayload.original_return_date = existingRental.original_return_date;
+            }
+          }
 
           if (['active', 'reserved'].includes(selectedStatus)) {
             rentalPayload.archived = false;
@@ -3188,6 +3215,24 @@ window.viewRental = async function (id) {
       document.getElementById('viewReturnTime').textContent = rental.return_time;
     } else {
       document.getElementById('viewEndTimeSection').style.display = 'none';
+    }
+
+    // Show rescheduled section if original dates exist
+    const viewRescheduledSection = document.getElementById('viewRescheduledSection');
+    if (rental.original_rent_date && rental.original_return_date) {
+      // Check if dates were actually changed
+      const datesChanged = rental.original_rent_date !== rental.rent_date ||
+        rental.original_return_date !== rental.return_date;
+
+      if (datesChanged) {
+        viewRescheduledSection.style.display = 'block';
+        document.getElementById('viewOriginalRentalDate').textContent = rental.original_rent_date;
+        document.getElementById('viewOriginalReturnDate').textContent = rental.original_return_date;
+      } else {
+        viewRescheduledSection.style.display = 'none';
+      }
+    } else {
+      viewRescheduledSection.style.display = 'none';
     }
 
     // Populate items list

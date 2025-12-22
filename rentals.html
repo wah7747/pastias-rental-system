@@ -651,6 +651,27 @@
               <p id="viewReturnTime" style="margin: 4px 0 0; font-size: 0.95rem;">-</p>
             </div>
           </div>
+
+          <!-- Rescheduled Information (shown if rental was rescheduled) -->
+          <div id="viewRescheduledSection"
+            style="display: none; margin-top: 1rem; padding: 0.75rem 1rem; background: #e0f2fe; border-left: 4px solid #0284c7; border-radius: 6px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2">
+                <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <strong style="color: #0369a1; font-size: 0.9rem;">🔄 Rescheduled Rental</strong>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 8px;">
+              <div>
+                <strong style="font-size: 0.8rem; color: #075985;">Original Rental Date:</strong>
+                <p id="viewOriginalRentalDate" style="margin: 2px 0 0; font-size: 0.85rem; color: #075985;">-</p>
+              </div>
+              <div>
+                <strong style="font-size: 0.8rem; color: #075985;">Original Return Date:</strong>
+                <p id="viewOriginalReturnDate" style="margin: 2px 0 0; font-size: 0.85rem; color: #075985;">-</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Items List -->
