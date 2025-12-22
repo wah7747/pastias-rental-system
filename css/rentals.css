@@ -179,3 +179,121 @@
 .cancel-choice-btn svg {
     flex-shrink: 0;
 }
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+
+    /* Action buttons - stack vertically on mobile */
+    .btn-action {
+        display: block;
+        width: 100%;
+        margin: 4px 0;
+        padding: 8px 12px;
+    }
+
+    /* Cart table responsiveness */
+    #cartItemsTable {
+        font-size: 0.75rem;
+    }
+
+    #cartItemsTable th,
+    #cartItemsTable td {
+        padding: 6px;
+        white-space: nowrap;
+    }
+
+    /* Smaller modal buttons */
+    .reschedule-choice-btn,
+    .cancel-choice-btn {
+        padding: 12px 16px;
+        font-size: 14px;
+    }
+
+    /* Search dropdown on mobile */
+    .search-dropdown {
+        max-height: 200px;
+    }
+
+    .search-result-item {
+        padding: 10px;
+    }
+
+    .search-item-name {
+        font-size: 0.85rem;
+    }
+
+    .search-item-details {
+        font-size: 0.75rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    /* View tabs responsive */
+    .view-tabs {
+        display: flex;
+        gap: 8px;
+    }
+
+    .tab-btn {
+        flex: 1;
+        font-size: 12px;
+        padding: 8px 12px;
+    }
+
+    /* Calendar filters on mobile */
+    .calendar-filters {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .calendar-filters label {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+
+    /* Even smaller on tiny screens */
+    .btn-action {
+        font-size: 11px;
+        padding: 6px 10px;
+    }
+
+    #cartItemsTable {
+        font-size: 0.7rem;
+    }
+
+    #cartItemsTable th,
+    #cartItemsTable td {
+        padding: 4px;
+    }
+
+    .reschedule-choice-btn,
+    .cancel-choice-btn {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+
+    .search-result-item {
+        padding: 8px;
+    }
+
+    .search-item-name {
+        font-size: 0.8rem;
+    }
+
+    .tab-btn {
+        font-size: 11px;
+        padding: 6px 8px;
+    }
+
+    /* Smaller switch and labels */
+    .switch {
+        transform: scale(0.9);
+    }
+
+    #historyLabel {
+        font-size: 11px;
+    }
+}

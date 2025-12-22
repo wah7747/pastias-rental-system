@@ -812,6 +812,16 @@ table tbody tr:nth-child(even):hover {
 
   .page-header h1 {
     font-size: 24px;
+    word-break: break-word;
+  }
+
+  .page-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .welcome-text {
+    font-size: 12px;
   }
 
   .form-row {
@@ -821,12 +831,74 @@ table tbody tr:nth-child(even):hover {
   .modal-card {
     width: 95%;
     padding: var(--space-5);
+    max-height: 85vh;
+  }
+
+  .modal-header h2 {
+    font-size: 20px;
+    word-break: break-word;
+  }
+
+  /* Better table handling on mobile */
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: var(--space-3);
+  }
+
+  table {
+    font-size: 12px;
+    min-width: 600px;
+    /* Ensure table has minimum width for scrolling */
+  }
+
+  th {
+    padding: var(--space-2);
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: var(--space-2);
+    word-break: break-word;
+  }
+
+  table td:first-child {
+    max-width: 150px;
+  }
+
+  /* Button adjustments for mobile */
+  .btn-edit,
+  .btn-delete {
+    padding: var(--space-1) var(--space-2);
+    font-size: 11px;
+    margin-right: var(--space-1);
+  }
+
+  .primary-button,
+  .btn-primary {
+    font-size: 13px;
+    padding: var(--space-2) var(--space-3);
+  }
+
+  /* Action bar responsive */
+  .action-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: var(--space-2) !important;
+  }
+
+  /* Status badges */
+  .status-badge {
+    font-size: 10px;
+    padding: var(--space-1) var(--space-2);
   }
 }
 
 @media (max-width: 480px) {
   .page-header h1 {
-    font-size: 20px;
+    font-size: 18px;
+    line-height: 1.3;
   }
 
   .sidebar {
@@ -834,7 +906,7 @@ table tbody tr:nth-child(even):hover {
   }
 
   .brand-name {
-    font-size: 12px;
+    font-size: 11px;
   }
 
   .brand-subtitle {
@@ -842,19 +914,79 @@ table tbody tr:nth-child(even):hover {
     /* Hide subtitle on very small screens */
   }
 
+  .brand-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+
   .nav {
     gap: var(--space-1);
   }
 
   .nav-item {
-    font-size: 9px;
+    font-size: 8px;
     padding: var(--space-1) var(--space-2);
     gap: 2px;
   }
 
   .nav-item svg {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
+  }
+
+  /* Smaller modal on tiny screens */
+  .modal-card {
+    width: 98%;
+    padding: var(--space-4);
+    max-height: 90vh;
+  }
+
+  .modal-header h2 {
+    font-size: 18px;
+  }
+
+  /* Form inputs smaller padding */
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    padding: var(--space-2) var(--space-3);
+    font-size: 14px;
+  }
+
+  .form-group label {
+    font-size: 13px;
+  }
+
+  /* Smaller buttons */
+  .primary-button,
+  .btn-primary,
+  .logout-btn {
+    font-size: 12px;
+    padding: var(--space-2) var(--space-3);
+  }
+
+  /* Table adjustments */
+  table {
+    font-size: 11px;
+  }
+
+  th {
+    font-size: 10px;
+  }
+
+  /* Welcome text */
+  .welcome-text {
+    font-size: 11px;
+  }
+
+  /* Page content padding */
+  .content {
+    padding: var(--space-3);
+  }
+
+  .table-container {
+    padding: var(--space-2);
   }
 }
 
